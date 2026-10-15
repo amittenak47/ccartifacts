@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Minkowski to Penrose</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&family=Public+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../assets/widget.css">
+</head>
+<body>
+<main class="page">
+<a class="crumb" href="../index.html">&larr; All explainers</a>
+<h1>Minkowski to Penrose</h1>
+<p class="lede">Watch a Minkowski spacetime diagram squeeze into a Penrose diamond.</p>
+<div class="card">
+<h2 class="sr-only">Minkowski spacetime diagram with hyperbolas of constant interval and a grid of constant time and position, morphing into a Penrose diamond as a slider moves or the play button runs.</h2>
+<canvas id="cv" style="width:100%;display:block" aria-label="Minkowski diagram morphing into a Penrose diagram"></canvas>
+<div style="display:flex;align-items:center;gap:12px;margin:10px 0 6px">
+<button id="pl" aria-label="Play the squeeze">&#9654; Play</button>
+<input type="range" id="sq" min="0" max="1" step="0.01" value="0" style="flex:1" aria-label="Squeeze">
+<span id="sqo" style="font-size:13px;font-weight:500;min-width:72px">Minkowski</span>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--text-secondary)">
+<span><span style="display:inline-block;width:16px;height:3px;background:#EF9F27;vertical-align:middle;margin-right:6px"></span>light cone, the "X"</span>
+<span><span style="display:inline-block;width:16px;height:3px;background:#7F77DD;vertical-align:middle;margin-right:6px"></span>timelike hyperbolas</span>
+<span><span style="display:inline-block;width:16px;height:3px;background:#1D9E75;vertical-align:middle;margin-right:6px"></span>spacelike hyperbolas</span>
+<span><span style="display:inline-block;width:16px;height:3px;background:var(--border-stronger);vertical-align:middle;margin-right:6px"></span>constant t and x</span>
+</div>
+<script>
+const cv=document.getElementById('cv'),sl=document.getElementById('sq');
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim()||'#888';
+let W,H,R,CX,CY,ctx;
+function setup(){W=cv.clientWidth||380;H=Math.round(W*0.92);const d=devicePixelRatio||1;cv.width=W*d;cv.height=H*d;cv.style.height=H+'px';ctx=cv.getContext('2d');ctx.setTransform(d,0,0,d,0,0);R=Math.min(W,H)*0.42;CX=W/2;CY=H/2;}
+function map(x,t,l){const u=t-x,v=t+x,U=Math.atan(u)*2/Math.PI,V=Math.atan(v)*2/Math.PI;const xc=(V-U)/2,tc=(U+V)/2;return[CX+((1-l)*x/4+l*xc)*R,CY-((1-l)*t/4+l*tc)*R];}
+function curve(fn,l,col,lw,dash){ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.setLineDash(dash||[]);ctx.beginPath();for(let i=0;i<=700;i++){const w=-7+14*i/700;const[x,t]=fn(w);const[px,py]=map(x,t,l);i?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.stroke();ctx.setLineDash([]);}
+function draw(){const l=+sl.value;document.getElementById('sqo').textContent=l<0.02?'Minkowski':l>0.98?'Penrose':Math.round(l*100)+'%';
+ ctx.clearRect(0,0,W,H);ctx.save();ctx.beginPath();ctx.rect(0,0,W,H);ctx.clip();
+ const g=css('--border-stronger');ctx.globalAlpha=0.5;
+ for(const c of [-3,-2,-1,0,1,2,3]){curve(w=>[Math.sinh(w),c],l,g,0.8);curve(w=>[c,Math.sinh(w)],l,g,0.8);}
+ ctx.globalAlpha=1;
+ for(const k of [0.6,1.3,2.2])for(const s of [1,-1]){curve(w=>[k*Math.sinh(w),s*k*Math.cosh(w)],l,'#7F77DD',2.2);curve(w=>[s*k*Math.cosh(w),k*Math.sinh(w)],l,'#1D9E75',2.2);}
+ curve(w=>[Math.sinh(w),Math.sinh(w)],l,'#EF9F27',2.4,[7,5]);curve(w=>[Math.sinh(w),-Math.sinh(w)],l,'#EF9F27',2.4,[7,5]);
+ if(l>0.4){ctx.globalAlpha=Math.min(1,(l-0.4)/0.6);ctx.strokeStyle=css('--text-secondary');ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(CX,CY-R);ctx.lineTo(CX+R,CY);ctx.lineTo(CX,CY+R);ctx.lineTo(CX-R,CY);ctx.closePath();ctx.stroke();
+  ctx.fillStyle=css('--text-secondary');ctx.font='12px sans-serif';ctx.textAlign='center';ctx.fillText('i⁺',CX,CY-R-7);ctx.fillText('i⁻',CX,CY+R+16);ctx.textAlign='left';ctx.fillText('i⁰',CX+R+5,CY+4);ctx.textAlign='right';ctx.fillText('i⁰',CX-R-5,CY+4);ctx.textAlign='left';ctx.fillText('ℐ⁺',CX+R/2+8,CY-R/2-6);ctx.fillText('ℐ⁻',CX+R/2+8,CY+R/2+14);ctx.textAlign='right';ctx.fillText('ℐ⁺',CX-R/2-8,CY-R/2-6);ctx.fillText('ℐ⁻',CX-R/2-8,CY+R/2+14);ctx.globalAlpha=1;}
+ ctx.restore();}
+let anim=null;document.getElementById('pl').onclick=()=>{if(anim)cancelAnimationFrame(anim);const start=+sl.value>=0.99?0:+sl.value;
+ if(matchMedia('(prefers-reduced-motion: reduce)').matches){sl.value=start<0.5?1:0;draw();return;}const t0=performance.now();
+ const step=t=>{const p=Math.min(1,(t-t0)/2500);sl.value=(start+(1-start)*(p<0.5?2*p*p:1-Math.pow(-2*p+2,2)/2)).toFixed(3);draw();if(p<1)anim=requestAnimationFrame(step);else anim=null;};anim=requestAnimationFrame(step);};
+sl.oninput=draw;new ResizeObserver(()=>{setup();draw();}).observe(cv);matchMedia('(prefers-color-scheme: dark)').addEventListener('change',draw);setup();draw();
+</script>
+
+</div>
+<div class="notes"><p>The light-cone X stays straight at 45° by design and shrinks so its ends become the midpoints of the diamond's edges. The hyperbolas curl inward and bunch up along the edges ℐ⁺ and ℐ⁻. Lines of constant t pinch to the side corners i⁰; lines of constant x pinch to the top and bottom corners i⁺ and i⁻.</p></div>
+</main>
+</body>
+</html>

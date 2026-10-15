@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Hyperboloid to Poincaré</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&family=Public+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../assets/widget.css">
+</head>
+<body>
+<main class="page">
+<a class="crumb" href="../index.html">&larr; All explainers</a>
+<h1>Hyperboloid to Poincaré</h1>
+<p class="lede">The exact link between spacetime-style hyperbolas and the Poincaré disk: project the hyperbola t² − x² = 1 from the point (0, −1) onto the line t = 0.</p>
+<div class="card">
+<h2 class="sr-only">Projection of the hyperbola t squared minus x squared equals one from the point (0, minus 1) onto the t equals zero line, showing the image is tanh of r over 2.</h2>
+<svg id="sv" width="100%" viewBox="0 0 380 310" role="img"><title>Hyperboloid to Poincaré disk</title><desc>A point on the hyperbola projects through the pole to the interval from minus one to one</desc><g id="g"></g></svg>
+<div style="display:flex;align-items:center;gap:12px;margin:10px 0 6px">
+<label for="sr" style="font-size:13px;color:var(--text-secondary)">Hyperbolic distance r</label>
+<input type="range" id="sr" min="-1.8" max="1.8" step="0.02" value="1.1" style="flex:1">
+<span id="sro" style="font-size:13px;font-weight:500;min-width:36px">1.10</span>
+</div>
+<div id="rd" style="font-size:13px;color:var(--text-secondary);line-height:1.6"></div>
+<script>
+const OX=190,OY=230,S=62,X=x=>OX+x*S,Y=t=>OY-t*S;
+function draw(){const r=+document.getElementById('sr').value;document.getElementById('sro').textContent=r.toFixed(2);
+ const px=Math.sinh(r),pt=Math.cosh(r),xd=px/(1+pt);let s='';
+ s+=`<line x1="10" y1="${Y(0)}" x2="370" y2="${Y(0)}" stroke="var(--border-strong)" stroke-width="0.8"/><line x1="${X(0)}" y1="300" x2="${X(0)}" y2="10" stroke="var(--border-strong)" stroke-width="0.8"/>`;
+ s+=`<line x1="${X(-3)}" y1="${Y(3)}" x2="${X(0)}" y2="${Y(0)}" stroke="#EF9F27" stroke-width="1.5" stroke-dasharray="5 4"/><line x1="${X(3)}" y1="${Y(3)}" x2="${X(0)}" y2="${Y(0)}" stroke="#EF9F27" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+ let d='';for(let i=0;i<=120;i++){const x=-2.95+5.9*i/120;d+=(i?'L':'M')+X(x).toFixed(1)+' '+Y(Math.sqrt(1+x*x)).toFixed(1);}
+ s+=`<path d="${d}" fill="none" stroke="#7F77DD" stroke-width="2.2"/>`;
+ s+=`<line x1="${X(-1)}" y1="${Y(0)}" x2="${X(1)}" y2="${Y(0)}" stroke="#1D9E75" stroke-width="5" stroke-linecap="round"/>`;
+ s+=`<line x1="${X(0)}" y1="${Y(-1)}" x2="${X(px)}" y2="${Y(pt)}" stroke="var(--text-secondary)" stroke-width="1" stroke-dasharray="3 3"/>`;
+ s+=`<circle cx="${X(0)}" cy="${Y(-1)}" r="4" fill="var(--text-primary)"/><circle cx="${X(px)}" cy="${Y(pt)}" r="5" fill="#7F77DD"/><circle cx="${X(xd)}" cy="${Y(0)}" r="5" fill="#1D9E75" stroke="var(--surface-2)" stroke-width="1.5"/>`;
+ s+=`<text class="ts" x="${X(0)+8}" y="${Y(-1)+4}">pole (0, −1)</text>`;
+ s+=`<text class="ts" x="${X(0)-8}" y="${Y(1)+16}" text-anchor="end">vertex</text>`;
+ s+=`<text class="ts" x="${X(-1)}" y="${Y(0)+18}" text-anchor="middle">−1</text><text class="ts" x="${X(1)}" y="${Y(0)+18}" text-anchor="middle">1</text>`;
+ s+=`<text class="ts" x="${X(2.2)}" y="${Y(3.05)}" text-anchor="start" style="fill:#EF9F27">light cone</text>`;
+ s+=`<text class="ts" x="${X(-2.95)}" y="${Y(3.1)-6}" text-anchor="start" style="fill:#7F77DD">t² − x² = 1</text>`;
+ document.getElementById('g').innerHTML=s;
+ document.getElementById('rd').innerHTML=`Point on the hyperbola: (sinh r, cosh r) = (${px.toFixed(2)}, ${pt.toFixed(2)}). It lands at sinh r / (1 + cosh r) = tanh(r/2) = <b style="font-weight:500;color:var(--text-primary)">${xd.toFixed(3)}</b>. As r grows without limit, the landing point creeps toward ±1 but never reaches it.`;}
+document.getElementById('sr').oninput=draw;draw();
+</script>
+
+</div>
+<div class="notes"><p>The point at hyperbolic distance r lands at tanh(r/2), so the whole infinite curve fits inside the interval from −1 to 1. In 2D the same projection turns the hyperboloid t² − x² − y² = 1 into the Poincaré disk.</p></div>
+</main>
+</body>
+</html>

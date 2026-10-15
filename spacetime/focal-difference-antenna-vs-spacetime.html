@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Focal Difference Compared</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&family=Public+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../assets/widget.css">
+</head>
+<body>
+<main class="page">
+<a class="crumb" href="../index.html">&larr; All explainers</a>
+<h1>Focal Difference Compared</h1>
+<p class="lede">The same constant distance difference on an antenna hyperbola and a spacetime hyperbola, and what it means in each.</p>
+<div class="card">
+<h2 class="sr-only">Comparison of the focal distance difference on an antenna hyperbola and on a spacetime hyperbola, with a draggable point and live distance readouts.</h2>
+<style>.md button[aria-pressed="true"]{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}.rw{display:flex;align-items:center;gap:12px;margin:6px 0}.rw label{font-size:13px;color:var(--text-secondary);min-width:92px}.rw span{font-size:13px;font-weight:500;min-width:40px}</style>
+<div class="md" style="display:flex;gap:8px;margin:0 0 8px"><button id="mA" aria-pressed="true">Two antennas</button><button id="mS" aria-pressed="false">Spacetime</button></div>
+<canvas id="cv" style="width:100%;display:block" aria-label="Hyperbola with foci and distances"></canvas>
+<div class="rw"><label for="sk" id="skl">Path difference k</label><input type="range" id="sk" min="0.4" max="3.6" step="0.1" value="2" style="flex:1"><span id="sko">2.0</span></div>
+<div class="rw"><label for="sw">Point P</label><input type="range" id="sw" min="-1.6" max="1.6" step="0.02" value="0.7" style="flex:1"><span></span></div>
+<div id="rd" style="font-size:13px;color:var(--text-secondary);line-height:1.65;margin-top:6px"></div>
+<script>
+const cv=document.getElementById('cv');let mode='A';const D=4;
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim()||'#888';
+function draw(){const k=+document.getElementById('sk').value,w=+document.getElementById('sw').value;document.getElementById('sko').textContent=k.toFixed(1);
+ const W=cv.clientWidth||380,H=Math.round(W*0.8),dp=devicePixelRatio||1;cv.width=W*dp;cv.height=H*dp;cv.style.height=H+'px';const ctx=cv.getContext('2d');ctx.setTransform(dp,0,0,dp,0,0);
+ const ink=css('--text-primary'),mut=css('--text-secondary'),bd=css('--border-strong');
+ let sc,X,Y,F1,F2,curve,P,a;
+ if(mode==='A'){sc=W/10;X=x=>W/2+x*sc;Y=y=>H/2-y*sc;const c=D/2;a=k/2;const b=Math.sqrt(c*c-a*a);F1=[-c,0];F2=[c,0];curve=s=>[a*Math.cosh(s),b*Math.sinh(s)];P=curve(w);}
+ else{sc=W/9;X=x=>W/2+x*sc;Y=t=>H*0.88-t*sc;const s0=k/2;a=s0;const f=s0*Math.SQRT2;F1=[0,f];F2=[0,-f];curve=u=>[s0*Math.sinh(u),s0*Math.cosh(u)];P=curve(w);}
+ ctx.strokeStyle=bd;ctx.lineWidth=0.8;ctx.beginPath();ctx.moveTo(0,Y(0));ctx.lineTo(W,Y(0));ctx.moveTo(X(0),0);ctx.lineTo(X(0),H);ctx.stroke();
+ if(mode==='S'){ctx.strokeStyle='#EF9F27';ctx.setLineDash([6,4]);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(X(-6),Y(6));ctx.lineTo(X(0),Y(0));ctx.lineTo(X(6),Y(6));ctx.stroke();ctx.setLineDash([]);}
+ ctx.strokeStyle='#7F77DD';ctx.lineWidth=2.4;ctx.beginPath();for(let i=0;i<=200;i++){const s=-3+6*i/200;const q=curve(s);i?ctx.lineTo(X(q[0]),Y(q[1])):ctx.moveTo(X(q[0]),Y(q[1]));}ctx.stroke();
+ if(mode==='A'){ctx.globalAlpha=0.35;ctx.beginPath();for(let i=0;i<=200;i++){const s=-3+6*i/200;const q=curve(s);i?ctx.lineTo(X(-q[0]),Y(q[1])):ctx.moveTo(X(-q[0]),Y(q[1]));}ctx.stroke();ctx.globalAlpha=1;}
+ const d1=Math.hypot(P[0]-F1[0],P[1]-F1[1]),d2=Math.hypot(P[0]-F2[0],P[1]-F2[1]);
+ ctx.lineWidth=2;ctx.strokeStyle='#D85A30';ctx.beginPath();ctx.moveTo(X(F1[0]),Y(F1[1]));ctx.lineTo(X(P[0]),Y(P[1]));ctx.stroke();
+ ctx.strokeStyle='#1D9E75';ctx.beginPath();ctx.moveTo(X(F2[0]),Y(F2[1]));ctx.lineTo(X(P[0]),Y(P[1]));ctx.stroke();
+ for(const [F,col,l] of [[F1,'#D85A30',mode==='A'?'A':'F₁'],[F2,'#1D9E75',mode==='A'?'B':'F₂']]){ctx.beginPath();ctx.arc(X(F[0]),Y(F[1]),6,0,7);ctx.fillStyle=col;ctx.fill();ctx.fillStyle=ink;ctx.font='12px sans-serif';ctx.fillText(l,X(F[0])+9,Y(F[1])+16);}
+ ctx.beginPath();ctx.arc(X(P[0]),Y(P[1]),6,0,7);ctx.fillStyle=ink;ctx.fill();ctx.fillText('P',X(P[0])+9,Y(P[1])-8);
+ if(mode==='S'){ctx.fillStyle=mut;ctx.fillText('t',X(0)+6,12);ctx.fillText('x',W-12,Y(0)-6);}
+ const big=Math.max(d1,d2),sm=Math.min(d1,d2);
+ if(mode==='A'){document.getElementById('rd').innerHTML=`<span style="color:#D85A30">d<sub>A</sub> = ${d1.toFixed(3)}</span> · <span style="color:#1D9E75">d<sub>B</sub> = ${d2.toFixed(3)}</span> · difference <b style="font-weight:500;color:var(--text-primary)">${(d1-d2).toFixed(3)}</b><br>Foci are the real towers, fixed ${D} apart. The difference k is a physical path difference: the signal from B arrives k/c sooner than from A. In wavelengths, whole k = peak, half k = null. Change k and the foci stay put while the curve's shape changes (confocal family).`;}
+ else{const s0=k/2,t=P[1],x=P[0];document.getElementById('rd').innerHTML=`<span style="color:#D85A30">d₁ = ${d1.toFixed(3)}</span> · <span style="color:#1D9E75">d₂ = ${d2.toFixed(3)}</span> · difference <b style="font-weight:500;color:var(--text-primary)">${(big-sm).toFixed(3)}</b> = 2s<br>Event P: t = ${t.toFixed(3)}, x = ${x.toFixed(3)}. Interval s = √(t² − x²) = <b style="font-weight:500;color:var(--text-primary)">${Math.sqrt(t*t-x*x).toFixed(3)}</b>, the proper time on a clock moving from the origin at speed v = x/t = ${(x/t).toFixed(3)}c. Light-cone form: (t − x)(t + x) = s² = ${(s0*s0).toFixed(3)}. The foci at t = ±s√2 are paper points with no physical meaning, and they move when s changes (same shape, rescaled).`;}}
+function setMode(m){mode=m;document.getElementById('mA').setAttribute('aria-pressed',m==='A');document.getElementById('mS').setAttribute('aria-pressed',m==='S');
+ const sk=document.getElementById('sk');document.getElementById('skl').textContent=m==='A'?'Path difference k':'2 × interval s';if(m==='A'){sk.max=3.6;}else{sk.max=3.2;if(+sk.value>3.2)sk.value=3.2;}draw();}
+document.getElementById('mA').onclick=()=>setMode('A');document.getElementById('mS').onclick=()=>setMode('S');
+document.getElementById('sk').oninput=draw;document.getElementById('sw').oninput=draw;new ResizeObserver(draw).observe(cv);matchMedia('(prefers-color-scheme: dark)').addEventListener('change',draw);draw();
+</script>
+
+</div>
+<div class="notes"><p>Antennas: the foci are real towers, fixed in place, and the difference k is a physical path difference (time difference of arrival × c). Changing k changes the curve's shape.</p><p>Spacetime: the meaningful quantity is the interval s = √(t² − x²), the time on a clock moving from the origin to the event. The focal difference 2s holds on paper, but those foci are just points of the drawing. Changing s rescales the curve without changing its shape.</p></div>
+</main>
+</body>
+</html>

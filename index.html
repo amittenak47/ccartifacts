@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Curved Plane Explainers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&family=Public+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/widget.css">
+<style>
+.page{max-width:680px}
+h1{font-size:40px}
+section{margin-top:28px}
+h2{font:500 12px var(--font-sans);letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary);margin:0 0 8px}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+li a{display:block;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-decoration:none;color:var(--text-primary)}
+li a:hover,li a:focus-visible{border-color:var(--border-stronger);outline:none}
+li b{font-weight:500;display:block}
+li span{font-size:14px;color:var(--text-secondary)}
+li.big a{border-color:var(--border-accent)}
+</style>
+</head>
+<body>
+<main class="page">
+<h1>Routing and coloring on a curved plane</h1>
+<p class="lede">Interactive explainers on hyperbolic geometry, greedy routing, coloring the plane, frequency reuse, antenna interference and spacetime diagrams. Every page runs in the browser with no build step.</p>
+
+<section>
+<h2>Hyperbolic routing lab</h2>
+<ul>
+<li class="big"><a href="hyperbolic-routing-lab/index.html"><b>Hyperbolic Routing Lab</b><span>The full page: the saddle, Poincaré disk and ball, Möbius maps, a live re-run of Kleinberg's greedy routing experiment, plane coloring, frequency reuse and Shannon capacity.</span></a></li>
+</ul>
+</section>
+
+<section>
+<h2>Hyperbolic geometry</h2>
+<ul>
+<li><a href="hyperbolic-geometry/tree-in-poincare-disk.html"><b>Tree in the Poincaré Disk</b><span>Every edge the same hyperbolic length, even near the rim.</span></a></li>
+<li><a href="hyperbolic-geometry/hyperboloid-to-poincare.html"><b>Hyperboloid to Poincaré</b><span>Projecting t² − x² = 1 into the unit interval with tanh(r/2).</span></a></li>
+</ul>
+</section>
+
+<section>
+<h2>Plane coloring</h2>
+<ul>
+<li><a href="plane-coloring/hex-lattice-distances.html"><b>Hex Lattice Distances</b><span>√3, √4 and √7 on a hex grid, and why 7 colors is the pattern that works.</span></a></li>
+<li><a href="plane-coloring/two-steps-60-degree-turn.html"><b>Two Steps, One Turn</b><span>The √3·d walk with its 60° exterior and 120° interior angle.</span></a></li>
+</ul>
+</section>
+
+<section>
+<h2>Wireless interference</h2>
+<ul>
+<li><a href="wireless-interference/two-antenna-interference.html"><b>Two-Antenna Interference</b><span>Peak and null hyperbolas, adjustable antenna spacing.</span></a></li>
+</ul>
+</section>
+
+<section>
+<h2>Spacetime</h2>
+<ul>
+<li><a href="spacetime/minkowski-to-penrose.html"><b>Minkowski to Penrose</b><span>Squeeze an infinite spacetime diagram into a diamond.</span></a></li>
+<li><a href="spacetime/focal-difference-antenna-vs-spacetime.html"><b>Focal Difference Compared</b><span>What the constant distance difference means for antennas and for spacetime.</span></a></li>
+</ul>
+</section>
+</main>
+</body>
+</html>

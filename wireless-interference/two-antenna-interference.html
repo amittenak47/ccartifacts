@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Two-Antenna Interference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&family=Public+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../assets/widget.css">
+</head>
+<body>
+<main class="page">
+<a class="crumb" href="../index.html">&larr; All explainers</a>
+<h1>Two-Antenna Interference</h1>
+<p class="lede">Peaks and nulls from two antennas trace a family of hyperbolas with the antennas as their shared foci.</p>
+<div class="card">
+<h2 class="sr-only">Interference pattern of two antennas, with constructive and destructive hyperbolas and their asymptote lines, adjustable antenna spacing.</h2>
+<canvas id="cv" style="width:100%;display:block;border-radius:8px" aria-label="Two-antenna interference pattern"></canvas>
+<div style="display:flex;align-items:center;gap:12px;margin:12px 0 6px">
+<label for="sd" style="font-size:13px;color:var(--text-secondary)">Antenna spacing</label>
+<input type="range" id="sd" min="1" max="6" step="0.5" value="3" style="flex:1">
+<span id="sdo" style="font-size:13px;font-weight:500;min-width:28px">3λ</span>
+</div>
+<div id="rd" style="font-size:13px;color:var(--text-secondary);line-height:1.6"></div>
+<script>
+const cv=document.getElementById('cv');
+function dark(){const m=document.documentElement.dataset.theme;return m?m==='dark':matchMedia('(prefers-color-scheme: dark)').matches;}
+function draw(){const D=+document.getElementById('sd').value;document.getElementById('sdo').textContent=D+'λ';
+ const W=cv.clientWidth||380,H=Math.round(W*0.78),dpr=devicePixelRatio||1;cv.width=W*dpr;cv.height=H*dpr;cv.style.height=H+'px';
+ const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);
+ const span=12,sc=W/span,X=x=>W/2+x*sc,Y=y=>H/2-y*sc,c=D/2;
+ const dk=dark(),lo=dk?[4,52,44]:[241,239,232],hi=dk?[93,202,165]:[15,110,86];
+ const img=ctx.createImageData(W,H);const step=2;
+ for(let py=0;py<H;py+=step)for(let px=0;px<W;px+=step){const x=(px-W/2)/sc,y=(H/2-py)/sc;
+  const d1=Math.hypot(x+c,y),d2=Math.hypot(x-c,y);const I=Math.pow(Math.cos(Math.PI*(d1-d2)),2);
+  const r=lo[0]+(hi[0]-lo[0])*I,g=lo[1]+(hi[1]-lo[1])*I,b=lo[2]+(hi[2]-lo[2])*I;
+  for(let a=0;a<step;a++)for(let bb=0;bb<step;bb++){const i=((py+a)*W+(px+bb))*4;if(py+a>=H||px+bb>=W)continue;img.data[i]=r;img.data[i+1]=g;img.data[i+2]=b;img.data[i+3]=255;}}
+ ctx.putImageData(img,0,0);ctx.setTransform(dpr,0,0,dpr,0,0);
+ const ink=dk?'#F1EFE8':'#2C2C2A',amb='#EF9F27';
+ let peaks=0;
+ for(let k2=-Math.floor(2*D);k2<=Math.floor(2*D);k2++){const k=k2/2;if(Math.abs(k)>=D)continue;const cons=k2%2===0;if(cons)peaks++;
+  ctx.strokeStyle=ink;ctx.lineWidth=cons?1.6:1;ctx.setLineDash(cons?[]:[4,4]);ctx.globalAlpha=cons?0.9:0.55;
+  if(k===0){ctx.beginPath();ctx.moveTo(X(0),0);ctx.lineTo(X(0),H);ctx.stroke();continue;}
+  const a=Math.abs(k)/2,b=Math.sqrt(c*c-a*a),s=Math.sign(k);ctx.beginPath();
+  for(let i=0;i<=200;i++){const w=-4+8*i/200;const x=s*a*Math.cosh(w),y=b*Math.sinh(w);i?ctx.lineTo(X(x),Y(y)):ctx.moveTo(X(x),Y(y));}ctx.stroke();
+  if(cons){ctx.setLineDash([2,5]);ctx.strokeStyle=amb;ctx.globalAlpha=0.9;ctx.lineWidth=1.2;const m=b/a;ctx.beginPath();ctx.moveTo(X(0),Y(0));ctx.lineTo(X(s*7),Y(7*m));ctx.moveTo(X(0),Y(0));ctx.lineTo(X(s*7),Y(-7*m));ctx.stroke();}}
+ ctx.setLineDash([]);ctx.globalAlpha=1;
+ for(const x of [-c,c]){ctx.beginPath();ctx.arc(X(x),Y(0),5,0,2*Math.PI);ctx.fillStyle=amb;ctx.fill();ctx.strokeStyle=ink;ctx.lineWidth=1.5;ctx.stroke();}
+ ctx.font='12px sans-serif';ctx.fillStyle=ink;ctx.textAlign='center';ctx.fillText('A',X(-c),Y(0)+20);ctx.fillText('B',X(c),Y(0)+20);
+ document.getElementById('rd').innerHTML=`Solid curves: d<sub>A</sub> − d<sub>B</sub> = whole wavelengths (peaks). Dashed: half wavelengths (nulls). ${peaks} peak curves fit between the antennas. Amber dotted lines are each peak curve's own asymptotes: they fan out at different angles (sin θ = k/D), so there is no single shared "X".`;}
+document.getElementById('sd').oninput=draw;new ResizeObserver(draw).observe(cv);matchMedia('(prefers-color-scheme: dark)').addEventListener('change',draw);draw();
+</script>
+
+</div>
+<div class="notes"><p>Every point on one curve has the same difference of distances to the two antennas. Each curve has its own asymptote angle, sin θ = k/D, so unlike a spacetime diagram there is no single shared "X".</p></div>
+</main>
+</body>
+</html>

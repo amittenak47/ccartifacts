@@ -4,65 +4,279 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Curved Plane Explainers</title>
+<meta name="description" content="Interactive explainers on antenna interference, spacetime diagrams, hyperbolic geometry, plane coloring and greedy routing, on one scrolling page.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&family=Public+Sans:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/widget.css">
 <style>
-.page{max-width:680px}
-h1{font-size:40px}
-section{margin-top:28px}
-h2{font:500 12px var(--font-sans);letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary);margin:0 0 8px}
-ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
-li a{display:block;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-decoration:none;color:var(--text-primary)}
-li a:hover,li a:focus-visible{border-color:var(--border-stronger);outline:none}
-li b{font-weight:500;display:block}
-li span{font-size:14px;color:var(--text-secondary)}
-li.big a{border-color:var(--border-accent)}
+/* One long page. Each explainer is its own HTML file shown in an iframe that
+   assets/embed.js keeps sized to its content. Behind everything sits a fixed
+   Farey tessellation of the Poincaré disk that slides along as you scroll. */
+:root{--nav-h:49px}
+html{scroll-behavior:smooth}
+body{padding:0}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
+
+.hero{min-height:88svh;max-width:1080px;margin:0 auto;padding:48px 16px 64px;display:flex;flex-direction:column;justify-content:flex-end}
+.eyebrow{font:500 12px/1.4 var(--font-sans);letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary);margin:0}
+.hero h1{font-size:clamp(42px,7.4vw,80px);line-height:1.02;letter-spacing:-.012em;max-width:11ch;margin:14px 0 18px}
+.hero .lede{font-size:18px;max-width:44ch;margin:0 0 28px}
+.cue{align-self:flex-start;display:inline-flex;align-items:center;gap:10px;font-size:14px;color:var(--text-primary);text-decoration:none;border:1px solid var(--border-strong);border-radius:99px;padding:8px 16px;background:var(--surface-0)}
+.cue:hover,.cue:focus-visible{border-color:var(--border-stronger);outline:none}
+.cue svg{width:14px;height:14px}
+
+nav.chapters{position:sticky;top:0;z-index:10;background:var(--surface-0);border-bottom:1px solid var(--border)}
+@supports (backdrop-filter:blur(1px)){nav.chapters{background:color-mix(in srgb,var(--surface-0) 82%,transparent);backdrop-filter:blur(10px)}}
+nav.chapters .row{max-width:1080px;margin:0 auto;padding:8px 16px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+nav.chapters .row::-webkit-scrollbar{display:none}
+nav.chapters a{flex:none;display:flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid transparent;border-radius:99px;font-size:13px;color:var(--text-secondary);text-decoration:none;transition:background .2s,border-color .2s,color .2s}
+nav.chapters a b{font-weight:500;font-variant-numeric:tabular-nums;color:var(--text-muted)}
+nav.chapters a:hover,nav.chapters a:focus-visible{color:var(--text-primary);outline:none;border-color:var(--border)}
+nav.chapters a[aria-current="true"]{color:var(--text-primary);background:var(--surface-2);border-color:var(--border-strong)}
+nav.chapters a[aria-current="true"] b{color:var(--text-accent)}
+.progress{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--text-accent);transform-origin:0 50%;transform:scaleX(0)}
+
+.chapter{padding:80px 16px 8px;scroll-margin-top:var(--nav-h)}
+.chapter>*{max-width:560px;margin-inline:auto}
+.chapter.wide>*{max-width:1080px}
+.intro h2{font-family:var(--font-serif);font-weight:400;font-size:clamp(30px,4.4vw,44px);line-height:1.08;letter-spacing:-.005em;margin:10px 0 12px;text-wrap:balance}
+.intro p{color:var(--text-secondary);margin:0 0 10px;max-width:58ch}
+.jump{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.jump button{font-size:12px;padding:4px 10px;border-radius:99px;background:var(--surface-0)}
+.frame{margin-top:32px;margin-bottom:40px}
+.frame iframe{display:block;width:100%;border:0;background:transparent}
+.frame .alone{display:inline-block;margin-top:6px;font-size:12px;color:var(--text-muted);text-decoration:none}
+.frame .alone:hover,.frame .alone:focus-visible{color:var(--text-primary);text-decoration:underline}
+.chapter+.chapter .intro{border-top:1px solid var(--border);padding-top:56px}
+.chapter+.chapter{padding-top:24px}
+
+footer{max-width:640px;margin:0 auto;padding:64px 16px 72px;font-size:14px;color:var(--text-secondary)}
+footer a{color:var(--text-primary)}
+
+html.js .reveal{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+html.js .reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  html.js .reveal{opacity:1;transform:none;transition:none}
+}
 </style>
+<script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
-<main class="page">
-<h1>Routing and coloring on a curved plane</h1>
-<p class="lede">Interactive explainers on hyperbolic geometry, greedy routing, coloring the plane, frequency reuse, antenna interference and spacetime diagrams. Every page runs in the browser with no build step.</p>
+<canvas id="bg" aria-hidden="true"></canvas>
 
-<section>
-<h2>Hyperbolic routing lab</h2>
-<ul>
-<li class="big"><a href="hyperbolic-routing-lab/index.html"><b>Hyperbolic Routing Lab</b><span>The full page: the saddle, Poincaré disk and ball, Möbius maps, a live re-run of Kleinberg's greedy routing experiment, plane coloring, frequency reuse and Shannon capacity.</span></a></li>
-</ul>
+<header class="hero">
+  <p class="eyebrow">ccartifacts · 8 interactive explainers</p>
+  <h1>Routing and coloring on a curved plane</h1>
+  <p class="lede">One curve keeps showing up: in antenna interference, in spacetime, and as the whole shape of hyperbolic space. Scroll through the pieces, then see them come together in a routing lab.</p>
+  <a class="cue" href="#wireless">Start scrolling <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v11M3 8l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+</header>
+
+<nav class="chapters" aria-label="Chapters">
+  <div class="row">
+    <a href="#wireless"><b>1</b>Antennas</a>
+    <a href="#spacetime"><b>2</b>Spacetime</a>
+    <a href="#geometry"><b>3</b>Hyperbolic disk</a>
+    <a href="#coloring"><b>4</b>Plane coloring</a>
+    <a href="#lab"><b>5</b>Routing lab</a>
+  </div>
+  <div class="progress" id="progress"></div>
+</nav>
+
+<main>
+<section class="chapter" id="wireless">
+  <div class="intro reveal">
+    <p class="eyebrow">Chapter 1 · Wireless interference</p>
+    <h2>Two antennas draw a family of hyperbolas</h2>
+    <p>Send one signal from two antennas and the waves add up in some places and cancel in others. Every point where they add, or cancel, has the same difference in distance to the two antennas. A curve of constant distance difference is a hyperbola.</p>
+  </div>
+  <div class="frame reveal">
+    <iframe src="wireless-interference/two-antenna-interference.html" title="Two-Antenna Interference" style="height:860px"></iframe>
+    <a class="alone" href="wireless-interference/two-antenna-interference.html">Open this one by itself</a>
+  </div>
 </section>
 
-<section>
-<h2>Hyperbolic geometry</h2>
-<ul>
-<li><a href="hyperbolic-geometry/tree-in-poincare-disk.html"><b>Tree in the Poincaré Disk</b><span>Every edge the same hyperbolic length, even near the rim.</span></a></li>
-<li><a href="hyperbolic-geometry/hyperboloid-to-poincare.html"><b>Hyperboloid to Poincaré</b><span>Projecting t² − x² = 1 into the unit interval with tanh(r/2).</span></a></li>
-</ul>
+<section class="chapter" id="spacetime">
+  <div class="intro reveal">
+    <p class="eyebrow">Chapter 2 · Spacetime</p>
+    <h2>The same curve, with a different meaning</h2>
+    <p>Spacetime diagrams are full of hyperbolas too. There, every point on one is the same time away on a clock that travels from the origin. Compare the two kinds side by side, then squeeze all of spacetime into a diamond.</p>
+  </div>
+  <div class="frame reveal">
+    <iframe src="spacetime/focal-difference-antenna-vs-spacetime.html" title="Focal Difference Compared" style="height:980px"></iframe>
+    <a class="alone" href="spacetime/focal-difference-antenna-vs-spacetime.html">Open this one by itself</a>
+  </div>
+  <div class="frame reveal">
+    <iframe src="spacetime/minkowski-to-penrose.html" title="Minkowski to Penrose" style="height:900px"></iframe>
+    <a class="alone" href="spacetime/minkowski-to-penrose.html">Open this one by itself</a>
+  </div>
 </section>
 
-<section>
-<h2>Plane coloring</h2>
-<ul>
-<li><a href="plane-coloring/hex-lattice-distances.html"><b>Hex Lattice Distances</b><span>√3, √4 and √7 on a hex grid, and why 7 colors is the pattern that works.</span></a></li>
-<li><a href="plane-coloring/two-steps-60-degree-turn.html"><b>Two Steps, One Turn</b><span>The √3·d walk with its 60° exterior and 120° interior angle.</span></a></li>
-</ul>
+<section class="chapter" id="geometry">
+  <div class="intro reveal">
+    <p class="eyebrow">Chapter 3 · Hyperbolic geometry</p>
+    <h2>From one hyperbola to the Poincaré disk</h2>
+    <p>Project the spacetime hyperbola onto a line and the whole infinite curve fits inside a short interval. Do the same in one more dimension and you get the Poincaré disk, which has so much room near its rim that a branching tree fits with every edge the same length.</p>
+  </div>
+  <div class="frame reveal">
+    <iframe src="hyperbolic-geometry/hyperboloid-to-poincare.html" title="Hyperboloid to Poincaré" style="height:720px"></iframe>
+    <a class="alone" href="hyperbolic-geometry/hyperboloid-to-poincare.html">Open this one by itself</a>
+  </div>
+  <div class="frame reveal">
+    <iframe src="hyperbolic-geometry/tree-in-poincare-disk.html" title="Tree in the Poincaré Disk" style="height:760px"></iframe>
+    <a class="alone" href="hyperbolic-geometry/tree-in-poincare-disk.html">Open this one by itself</a>
+  </div>
 </section>
 
-<section>
-<h2>Wireless interference</h2>
-<ul>
-<li><a href="wireless-interference/two-antenna-interference.html"><b>Two-Antenna Interference</b><span>Peak and null hyperbolas, adjustable antenna spacing.</span></a></li>
-</ul>
+<section class="chapter" id="coloring">
+  <div class="intro reveal">
+    <p class="eyebrow">Chapter 4 · Plane coloring</p>
+    <h2>How many colors does the flat plane need?</h2>
+    <p>Color every point of the plane so that no two points exactly 1 apart share a color. A pattern of hexagons does it with 7. The distances behind that pattern come from a simple walk: one step, a 60° turn, another step.</p>
+  </div>
+  <div class="frame reveal">
+    <iframe src="plane-coloring/two-steps-60-degree-turn.html" title="Two Steps, One Turn" style="height:640px"></iframe>
+    <a class="alone" href="plane-coloring/two-steps-60-degree-turn.html">Open this one by itself</a>
+  </div>
+  <div class="frame reveal">
+    <iframe src="plane-coloring/hex-lattice-distances.html" title="Hex Lattice Distances" style="height:1000px"></iframe>
+    <a class="alone" href="plane-coloring/hex-lattice-distances.html">Open this one by itself</a>
+  </div>
 </section>
 
-<section>
-<h2>Spacetime</h2>
-<ul>
-<li><a href="spacetime/minkowski-to-penrose.html"><b>Minkowski to Penrose</b><span>Squeeze an infinite spacetime diagram into a diamond.</span></a></li>
-<li><a href="spacetime/focal-difference-antenna-vs-spacetime.html"><b>Focal Difference Compared</b><span>What the constant distance difference means for antennas and for spacetime.</span></a></li>
-</ul>
+<section class="chapter wide" id="lab">
+  <div class="intro reveal">
+    <p class="eyebrow">Chapter 5 · Kleinberg 2007 · Izgorodin 2026 · Hadwiger–Nelson</p>
+    <h2>Putting it together: the routing lab</h2>
+    <p>The full lab joins the threads. Embed a network in the Poincaré disk and greedy routing always delivers. Then see what happens to plane coloring and frequency reuse once the plane is curved.</p>
+    <div class="jump" aria-label="Jump to a part of the lab">
+      <button data-to="saddle">Saddle</button><button data-to="disk">Poincaré disk</button><button data-to="mobius">Möbius maps</button><button data-to="greedy">Greedy routing</button><button data-to="numbers">Kleinberg's numbers</button><button data-to="ball">Poincaré ball</button><button data-to="coloring">Coloring curved planes</button><button data-to="reuse">Frequency reuse</button><button data-to="shannon">Shannon</button>
+    </div>
+  </div>
+  <div class="frame">
+    <iframe src="hyperbolic-routing-lab/index.html" title="Hyperbolic Routing Lab" loading="lazy" style="height:9000px"></iframe>
+    <a class="alone" href="hyperbolic-routing-lab/index.html">Open the lab by itself</a>
+  </div>
 </section>
 </main>
+
+<footer>
+  <p>Every explainer is a plain HTML file with no build step, and each one also works on its own page. Source and references are on <a href="https://github.com/amittenak47/ccartifacts">GitHub</a>.</p>
+</footer>
+
+<script>
+(function(){
+const root=document.documentElement;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)');
+const navH=()=>document.querySelector('nav.chapters').offsetHeight;
+
+/* Frames: size each iframe to the height its page reports, and remember where its sections start. */
+const frames=[...document.querySelectorAll('.frame iframe')];
+const lab=document.querySelector('#lab iframe');
+let pending=null,pendingTimer=0;
+addEventListener('message',e=>{
+  const d=e.data;
+  if(!d||d.ccartifacts!=='size'||typeof d.h!=='number')return;
+  const f=frames.find(f=>f.contentWindow===e.source);
+  if(!f)return;
+  f.style.height=Math.max(80,d.h)+'px';
+  f.anchors=d.anchors||{};
+  if(f===lab&&pending){clearTimeout(pendingTimer);pendingTimer=setTimeout(()=>jumpInLab(pending),200);}
+});
+function jumpInLab(id){
+  if(!lab.anchors||lab.anchors[id]==null)return;
+  pending=null;
+  const y=lab.getBoundingClientRect().top+scrollY+lab.anchors[id]-navH()-12;
+  scrollTo({top:y,behavior:reduce.matches?'auto':'smooth'});
+}
+document.querySelectorAll('.jump button').forEach(b=>b.addEventListener('click',()=>{
+  const id=b.dataset.to;
+  if(lab.anchors&&lab.anchors[id]!=null){jumpInLab(id);return;}
+  // The lab loads lazily: bring it on screen, then jump once it reports where its sections are.
+  pending=id;
+  scrollTo({top:lab.getBoundingClientRect().top+scrollY-navH()-12,behavior:'auto'});
+}));
+
+/* Chapter bar: highlight the chapter in view and keep its chip visible. */
+const links=new Map([...document.querySelectorAll('nav.chapters a')].map(a=>[a.hash.slice(1),a]));
+const row=document.querySelector('nav.chapters .row');
+const spy=new IntersectionObserver(es=>{
+  es.forEach(e=>{
+    if(!e.isIntersecting)return;
+    links.forEach(a=>a.removeAttribute('aria-current'));
+    const a=links.get(e.target.id);
+    if(!a)return;
+    a.setAttribute('aria-current','true');
+    row.scrollTo({left:a.offsetLeft-row.clientWidth/2+a.offsetWidth/2,behavior:reduce.matches?'auto':'smooth'});
+  });
+},{rootMargin:'-45% 0px -54% 0px'});
+document.querySelectorAll('.chapter').forEach(s=>spy.observe(s));
+addEventListener('scroll',()=>{if(scrollY<document.querySelector('.hero').offsetHeight*0.5)links.forEach(a=>a.removeAttribute('aria-current'));},{passive:true});
+
+/* Reveal: fade blocks in the first time they come on screen. */
+const rev=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');rev.unobserve(e.target);}}),{rootMargin:'0px 0px -8% 0px'});
+document.querySelectorAll('.reveal').forEach(el=>rev.observe(el));
+
+/* Background: the Farey tessellation of the Poincaré disk. Its geodesics join
+   fractions p/q and r/s with |ps − qr| = 1 on the boundary. Scrolling slides the
+   upper half-plane by z → z + s, a symmetry of the tessellation, so the pattern
+   flows around one boundary point and repeats with every whole step. */
+const bg=document.getElementById('bg'),cx2=bg.getContext('2d');
+const edges=[],K=24,N=12;
+function farey(a,b,c,d){const p=a+c,q=b+d;if(q>N)return;edges.push([p/q,a/b],[p/q,c/d]);farey(a,b,p,q);farey(p,q,c,d);}
+for(let n=-K;n<K;n++){edges.push([n,n+1],[n,Infinity]);farey(n,1,n+1,1);}
+const css=n=>getComputedStyle(root).getPropertyValue(n).trim();
+let W=0,H=0,dpr=1,queued=false;
+function resize(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;bg.width=Math.round(W*dpr);bg.height=Math.round(H*dpr);paint();}
+function paint(){
+  queued=false;
+  const heroH=document.querySelector('.hero').offsetHeight||H;
+  const k=Math.min(1,scrollY/heroH), wide=W>=880;
+  // Disk sits to the right of the title, then drifts to the middle as the chapters start.
+  const R=wide?Math.min(H*0.46,W*0.36):Math.min(W*0.58,H*0.36);
+  const ox=wide?W*(0.72-0.22*k):W*0.5, oy=wide?H*0.5:H*(0.3+0.2*k);
+  const shift=reduce.matches?0.35:(scrollY/520)%1;
+  cx2.setTransform(dpr,0,0,dpr,0,0);
+  cx2.clearRect(0,0,W,H);
+  cx2.strokeStyle=css('--text-secondary')||'#888';
+  cx2.globalAlpha=(wide?0.5:0.34)-(wide?0.36:0.22)*k;
+  cx2.lineWidth=1;
+  cx2.beginPath();cx2.arc(ox,oy,R,0,2*Math.PI);cx2.stroke();
+  cx2.globalAlpha=(wide?0.38:0.22)-(wide?0.29:0.14)*k;
+  cx2.lineWidth=0.8;
+  cx2.beginPath();
+  // Cayley map sends real x to the boundary angle atan2(−2x, x² − 1); ∞ goes to the top of the disk.
+  const ang=x=>x===Infinity?Math.PI/2:Math.atan2(-2*x,x*x-1)+Math.PI/2;
+  for(const [a,b] of edges){
+    const t1=ang(a+shift),t2=ang(b===Infinity?b:b+shift);
+    let m=(t1+t2)/2,h=Math.abs(t1-t2)/2;
+    if(h>Math.PI/2){h=Math.PI-h;m+=Math.PI;}
+    const p1x=ox+R*Math.cos(t1),p1y=oy-R*Math.sin(t1),p2x=ox+R*Math.cos(t2),p2y=oy-R*Math.sin(t2);
+    if(Math.cos(h)<1e-4){cx2.moveTo(p1x,p1y);cx2.lineTo(p2x,p2y);continue;}
+    const r=R*Math.tan(h);
+    if(r<0.7)continue;
+    // A geodesic is the arc of the circle through both endpoints that meets the rim at right angles.
+    const ccx=ox+R*Math.cos(m)/Math.cos(h),ccy=oy-R*Math.sin(m)/Math.cos(h);
+    const f1=Math.atan2(p1y-ccy,p1x-ccx);
+    let sw=Math.atan2(p2y-ccy,p2x-ccx)-f1;
+    while(sw>Math.PI)sw-=2*Math.PI;
+    while(sw<-Math.PI)sw+=2*Math.PI;
+    cx2.moveTo(p1x,p1y);
+    cx2.arc(ccx,ccy,r,f1,f1+sw,sw<0);
+  }
+  cx2.stroke();
+  // Progress line under the chapter bar.
+  const max=document.documentElement.scrollHeight-H;
+  document.getElementById('progress').style.transform='scaleX('+(max>0?Math.min(1,scrollY/max):0)+')';
+}
+const queue=()=>{if(!queued){queued=true;requestAnimationFrame(paint);}};
+addEventListener('scroll',queue,{passive:true});
+addEventListener('resize',resize);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',queue);
+reduce.addEventListener('change',queue);
+resize();
+})();
+</script>
 </body>
 </html>

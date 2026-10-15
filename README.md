@@ -2,7 +2,9 @@
 
 Interactive explainers on hyperbolic geometry, greedy routing, coloring the plane, frequency reuse, antenna interference and spacetime diagrams.
 
-Every page is plain HTML with inline JavaScript. There is no build step and nothing to install: open `index.html` in a browser, or browse the site if GitHub Pages is turned on for this repo.
+Every page is plain HTML with inline JavaScript. There is no build step and nothing to install: open `index.html` in a browser, or browse the site at https://amittenak47.github.io/ccartifacts/.
+
+`index.html` shows every explainer on one scrolling page, each in its own iframe. `assets/embed.js` is what lets a page sit in that frame: it hides the page's own navigation and reports its height so the frame fits. Every page still works on its own too.
 
 ## Contents
 

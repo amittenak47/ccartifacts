@@ -2,7 +2,7 @@ const $=id=>document.getElementById(id);
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function tok(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
 function palette(K){const L=+tok('--tile-l')||78,S=+tok('--tile-s')||52;const out=[];for(let i=0;i<K;i++){const h=(i*360/K+18*(i%2))%360;out.push(`hsl(${h} ${S}% ${L+((i%3)-1)*4}%)`);}return out;}
-function fit(cv,aspect,maxW=620){const w=Math.min(cv.parentElement.clientWidth-28,maxW);const h=Math.round(w*aspect);const dpr=window.devicePixelRatio||1;
+function fit(cv,aspect,maxW=620){const w=Math.max(120,Math.min(cv.parentElement.clientWidth-28,maxW));const h=Math.round(w*aspect);const dpr=window.devicePixelRatio||1;
   cv.style.width=w+'px';cv.style.height=h+'px';cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);return{ctx,w,h};}
 function DV(w,h,pad=10){const S=Math.min(w,h)/2-pad,ox=w/2,oy=h/2;return{S,ox,oy,sc:z=>[ox+z.re*S,oy-z.im*S],dk:(x,y)=>cx((x-ox)/S,-(y-oy)/S)};}
 function geoTo(ctx,V,z,w,move){const[x1,y1]=V.sc(z),[x2,y2]=V.sc(w);if(move)ctx.moveTo(x1,y1);

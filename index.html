@@ -3,279 +3,705 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Curved Plane Explainers</title>
-<meta name="description" content="Interactive explainers on antenna interference, spacetime diagrams, hyperbolic geometry, plane coloring and greedy routing, on one scrolling page.">
+<title>Artifact Gallery</title>
+<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&family=Public+Sans:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/widget.css">
+<link rel="stylesheet" href="assets/transition.css">
 <style>
-/* One long page. Each explainer is its own HTML file shown in an iframe that
-   assets/embed.js keeps sized to its content. Behind everything sits a fixed
-   Farey tessellation of the Poincaré disk that slides along as you scroll. */
-:root{--nav-h:49px}
-html{scroll-behavior:smooth}
-body{padding:0}
+/* An index of artifacts. To add one, copy an <article> below: give it an id, a title,
+   a description and a link. The strip at the top is built from the articles.
+   Behind the page a fixed Farey tessellation drifts slower than the cards; the strip of
+   titles scrolls sideways, snaps and sticks; cards fade in, reveal their key results as
+   they pass through the screen, and load in batches as the end of the list comes up. */
+/* Theme: the routing lab's slate ground with teal for links and the current item, amber and
+   violet for the drawings behind the page. These override assets/widget.css. */
+:root{
+  --surface-0:#F2F5F8; --surface-1:#E6EBF1; --surface-2:#FFFFFF;
+  --text-primary:#152033; --text-secondary:#4F5B6E; --text-muted:#7D8797;
+  --border:rgba(21,32,51,.12); --border-strong:rgba(21,32,51,.22); --border-stronger:rgba(21,32,51,.4);
+  --text-accent:#0A7C70; --border-accent:#5FB8AE; --bg-accent:#D7EFEC;
+  --amber:#B5620A; --violet:#5B4FC4;
+  --glow-a:rgba(10,124,112,.20); --glow-b:rgba(217,134,15,.16); --glow-c:rgba(91,79,196,.16);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --surface-0:#0E131A; --surface-1:#141B25; --surface-2:#18212D;
+  --text-primary:#E5EAF1; --text-secondary:#A3AEBF; --text-muted:#7A8596;
+  --border:rgba(229,234,241,.10); --border-strong:rgba(229,234,241,.2); --border-stronger:rgba(229,234,241,.38);
+  --text-accent:#3CC4B4; --border-accent:#2A8F84; --bg-accent:#12302D;
+  --amber:#E9A24A; --violet:#9C95F0;
+  --glow-a:rgba(60,196,180,.16); --glow-b:rgba(233,162,74,.11); --glow-c:rgba(156,149,240,.13); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --surface-0:#0E131A; --surface-1:#141B25; --surface-2:#18212D;
+  --text-primary:#E5EAF1; --text-secondary:#A3AEBF; --text-muted:#7A8596;
+  --border:rgba(229,234,241,.10); --border-strong:rgba(229,234,241,.2); --border-stronger:rgba(229,234,241,.38);
+  --text-accent:#3CC4B4; --border-accent:#2A8F84; --bg-accent:#12302D;
+  --amber:#E9A24A; --violet:#9C95F0;
+  --glow-a:rgba(60,196,180,.16); --glow-b:rgba(233,162,74,.11); --glow-c:rgba(156,149,240,.13); color-scheme:dark}
+:root{--gutter-l:max(16px,env(safe-area-inset-left,0px));--gutter-r:max(16px,env(safe-area-inset-right,0px))}
+html{scroll-padding-top:calc(50px + env(safe-area-inset-top,0px) + 16px)}
+body{padding:0;overflow-x:clip}
 #bg{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
+.in{max-width:760px;margin-inline:auto;padding-left:var(--gutter-l);padding-right:var(--gutter-r)}
 
-.hero{min-height:88svh;max-width:1080px;margin:0 auto;padding:48px 16px 64px;display:flex;flex-direction:column;justify-content:flex-end}
-.eyebrow{font:500 12px/1.4 var(--font-sans);letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary);margin:0}
-.hero h1{font-size:clamp(42px,7.4vw,80px);line-height:1.02;letter-spacing:-.012em;max-width:11ch;margin:14px 0 18px}
-.hero .lede{font-size:18px;max-width:44ch;margin:0 0 28px}
-.cue{align-self:flex-start;display:inline-flex;align-items:center;gap:10px;font-size:14px;color:var(--text-primary);text-decoration:none;border:1px solid var(--border-strong);border-radius:99px;padding:8px 16px;background:var(--surface-0)}
-.cue:hover,.cue:focus-visible{border-color:var(--border-stronger);outline:none}
-.cue svg{width:14px;height:14px}
+.hero{padding-block:clamp(64px,16vh,160px) clamp(36px,7vh,72px)}
+.hero h1{font-size:clamp(46px,8vw,84px);line-height:1;letter-spacing:-.015em;margin:0;max-width:8ch}
+.hero h1::after{content:"";display:block;width:64px;height:3px;margin-top:22px;background:linear-gradient(90deg,var(--text-accent),var(--amber));border-radius:2px}
 
-nav.chapters{position:sticky;top:0;z-index:10;background:var(--surface-0);border-bottom:1px solid var(--border)}
-@supports (backdrop-filter:blur(1px)){nav.chapters{background:color-mix(in srgb,var(--surface-0) 82%,transparent);backdrop-filter:blur(10px)}}
-nav.chapters .row{max-width:1080px;margin:0 auto;padding:8px 16px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
-nav.chapters .row::-webkit-scrollbar{display:none}
-nav.chapters a{flex:none;display:flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid transparent;border-radius:99px;font-size:13px;color:var(--text-secondary);text-decoration:none;transition:background .2s,border-color .2s,color .2s}
-nav.chapters a b{font-weight:500;font-variant-numeric:tabular-nums;color:var(--text-muted)}
-nav.chapters a:hover,nav.chapters a:focus-visible{color:var(--text-primary);outline:none;border-color:var(--border)}
-nav.chapters a[aria-current="true"]{color:var(--text-primary);background:var(--surface-2);border-color:var(--border-strong)}
-nav.chapters a[aria-current="true"] b{color:var(--text-accent)}
-.progress{position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--text-accent);transform-origin:0 50%;transform:scaleX(0)}
+nav.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--surface-0);border-bottom:1px solid var(--border)}
+@supports (backdrop-filter:blur(1px)){nav.bar{background:color-mix(in srgb,var(--surface-0) 82%,transparent);backdrop-filter:blur(10px)}}
+#toc{list-style:none;margin:0;display:flex;gap:22px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;padding-block:0;--strip-l:max(var(--gutter-l),calc((100vw - 760px)/2 + 16px));padding-left:var(--strip-l);padding-right:var(--gutter-r);scroll-padding-left:var(--strip-l)}
+#toc::-webkit-scrollbar{display:none}
+#toc li{flex:none;scroll-snap-align:start}
+#toc a{display:flex;align-items:baseline;gap:7px;padding:15px 0 13px;border-bottom:2px solid transparent;font-size:14px;color:var(--text-secondary);text-decoration:none;transition:color .2s,border-color .2s}
+#toc a span{font-weight:500;font-variant-numeric:tabular-nums;color:var(--text-muted)}
+#toc a:hover,#toc a:focus-visible{color:var(--text-primary);border-bottom-color:var(--border-stronger);outline:none}
+#toc a[aria-current="true"]{color:var(--text-accent);border-bottom-color:var(--text-accent)}
+#toc a[aria-current="true"] span{color:var(--text-accent)}
+.progress{position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,var(--text-accent),var(--amber));transform-origin:0 50%;transform:scaleX(0)}
 
-.chapter{padding:80px 16px 8px;scroll-margin-top:var(--nav-h)}
-.chapter>*{max-width:560px;margin-inline:auto}
-.chapter.wide>*{max-width:1080px}
-.intro h2{font-family:var(--font-serif);font-weight:400;font-size:clamp(30px,4.4vw,44px);line-height:1.08;letter-spacing:-.005em;margin:10px 0 12px;text-wrap:balance}
-.intro p{color:var(--text-secondary);margin:0 0 10px;max-width:58ch}
-.jump{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
-.jump button{font-size:12px;padding:4px 10px;border-radius:99px;background:var(--surface-0)}
-.frame{margin-top:32px;margin-bottom:40px}
-.frame iframe{display:block;width:100%;border:0;background:transparent}
-.frame .alone{display:inline-block;margin-top:6px;font-size:12px;color:var(--text-muted);text-decoration:none}
-.frame .alone:hover,.frame .alone:focus-visible{color:var(--text-primary);text-decoration:underline}
-.chapter+.chapter .intro{border-top:1px solid var(--border);padding-top:56px}
-.chapter+.chapter{padding-top:24px}
+main.in{padding-block:40px 120px}
+#list{display:flex;flex-direction:column;gap:20px}
+article{background:var(--surface-2);background:color-mix(in srgb,var(--surface-2) 96%,transparent);border:1px solid var(--border);border-radius:16px;padding:24px;transition:border-color .3s,box-shadow .3s}
+article.active{border-color:var(--border-accent);box-shadow:0 0 0 1px var(--border-accent)}
+article h2{font-family:var(--font-serif);font-weight:400;font-size:clamp(26px,3.4vw,32px);line-height:1.15;margin:0 0 4px;text-wrap:balance}
+article h2 a{color:var(--text-primary);text-decoration:none}
+article h2 a:hover,article h2 a:focus-visible{color:var(--text-accent);outline:none}
+article .where{font-size:13px;color:var(--text-muted);margin:0 0 14px}
+article p{margin:0 0 16px}
+article h3{font:500 12px var(--font-sans);letter-spacing:.08em;text-transform:uppercase;color:var(--text-secondary);margin:0 0 8px}
+.results{margin:0 0 18px;padding-left:20px;display:flex;flex-direction:column;gap:8px}
+.results li::marker{color:var(--text-accent)}
+/* Context: background for each entry, folded into sections. */
+.context{border-top:1px solid var(--border);padding-top:14px;margin-bottom:6px}
+.context .lead{padding-bottom:14px;border-bottom:1px solid var(--border)}
+.context .lead:last-child{border-bottom:0;padding-bottom:0}
+.context .lead>*+*{margin-top:14px}
+.context details{border-bottom:1px solid var(--border)}
+.context details:last-child{border-bottom:0}
+.context summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;font-weight:500;color:var(--text-primary)}
+.context summary::-webkit-details-marker{display:none}
+.context summary::after{content:"+";flex:none;color:var(--text-accent);font-size:20px;line-height:1}
+.context details[open]>summary::after{content:"−"}
+.context summary:hover{color:var(--text-accent)}
+.context summary:focus-visible{outline:2px solid var(--border-accent);outline-offset:2px;border-radius:4px}
+.context details>:not(summary){margin-bottom:16px}
+.note p{color:var(--text-secondary)}
+.note p:last-child{margin-bottom:0}
+.qa{margin:0}
+.qa dt{font-weight:500;margin-top:14px}
+.qa dt:first-child{margin-top:0}
+.qa dd{margin:4px 0 0;color:var(--text-secondary)}
+.eq{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;background:var(--surface-1);border-radius:6px;padding:8px 12px;overflow-x:auto;white-space:nowrap;margin-bottom:12px}
+.take{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;color:var(--text-secondary)}
+.take li::marker{color:var(--amber)}
+.figs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+@media (max-width:560px){.figs{grid-template-columns:minmax(0,1fr)}}
+.figs figure{margin:0;min-width:0}
+.figs canvas{display:block;width:100%;max-width:260px;aspect-ratio:1;margin:0 auto 10px}
+.figs figcaption{font-size:14px;color:var(--text-secondary)}
+.figs figcaption b{color:var(--text-primary);font-weight:500}
+article .links{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:14px;border-top:1px solid var(--border);padding-top:14px}
+article .open{color:var(--text-accent);font-weight:500;text-decoration:none}
+article .top{color:var(--text-secondary);text-decoration:none}
+article .open:hover,article .top:hover,article a:focus-visible{text-decoration:underline}
 
-footer{max-width:640px;margin:0 auto;padding:64px 16px 72px;font-size:14px;color:var(--text-secondary)}
-footer a{color:var(--text-primary)}
+.loader{display:flex;justify-content:center;padding-top:32px}
+.loader[hidden]{display:none}
+.loader i{width:18px;height:18px;border-radius:50%;border:2px solid var(--border-strong);border-top-color:var(--text-accent);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(1turn)}}
 
-html.js .reveal{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
-html.js .reveal.in{opacity:1;transform:none}
+/* Key results come in one by one as their card moves up the screen. */
+html.js .results li{opacity:.15;transform:translateX(-8px);transition:opacity .45s ease,transform .45s ease}
+html.js .results li.on{opacity:1;transform:none}
+/* Cards fade and rise as they enter, driven by scroll position. */
+@supports (animation-timeline:view()){
+  @media (prefers-reduced-motion:no-preference){
+    article{animation:rise linear both;animation-timeline:view();animation-range:entry 0% entry 60%}
+  }
+}
+@keyframes rise{from{opacity:0;transform:translateY(40px) scale(.98)}}
 @media (prefers-reduced-motion:reduce){
-  html{scroll-behavior:auto}
-  html.js .reveal{opacity:1;transform:none;transition:none}
+  html.js .results li{opacity:1;transform:none;transition:none}
+  .loader i{animation:none}
 }
 </style>
-<script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
 <canvas id="bg" aria-hidden="true"></canvas>
+<header class="hero" id="top"><div class="in"><h1>Artifact Gallery</h1></div></header>
 
-<header class="hero">
-  <p class="eyebrow">ccartifacts · 8 interactive explainers</p>
-  <h1>Routing and coloring on a curved plane</h1>
-  <p class="lede">One curve keeps showing up: in antenna interference, in spacetime, and as the whole shape of hyperbolic space. Scroll through the pieces, then see them come together in a routing lab.</p>
-  <a class="cue" href="#wireless">Begin with two antennas <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v11M3 8l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-</header>
-
-<nav class="chapters" aria-label="Chapters">
-  <div class="row">
-    <a href="#wireless"><b>1</b>Antennas</a>
-    <a href="#spacetime"><b>2</b>Spacetime</a>
-    <a href="#geometry"><b>3</b>Hyperbolic disk</a>
-    <a href="#coloring"><b>4</b>Plane coloring</a>
-    <a href="#lab"><b>5</b>Routing lab</a>
-  </div>
+<nav class="bar" aria-label="Artifacts">
+  <ol id="toc"></ol>
   <div class="progress" id="progress"></div>
 </nav>
 
-<main>
-<section class="chapter" id="wireless">
-  <div class="intro reveal">
-    <p class="eyebrow">Chapter 1 · Wireless interference</p>
-    <h2>Two antennas draw a family of hyperbolas</h2>
-    <p>Send one signal from two antennas and the waves add up in some places and cancel in others. Every point where they add, or cancel, has the same difference in distance to the two antennas. A curve of constant distance difference is a hyperbola.</p>
-  </div>
-  <div class="frame reveal">
-    <iframe src="wireless-interference/two-antenna-interference.html" title="Two-Antenna Interference" style="height:860px"></iframe>
-    <a class="alone" href="wireless-interference/two-antenna-interference.html">Open this one by itself</a>
-  </div>
-</section>
+<main class="in">
+<section aria-label="All artifacts" id="list">
 
-<section class="chapter" id="spacetime">
-  <div class="intro reveal">
-    <p class="eyebrow">Chapter 2 · Spacetime</p>
-    <h2>The same curve, with a different meaning</h2>
-    <p>Spacetime diagrams are full of hyperbolas too. There, every point on one is the same time away on a clock that travels from the origin. Compare the two kinds side by side, then squeeze all of spacetime into a diamond.</p>
-  </div>
-  <div class="frame reveal">
-    <iframe src="spacetime/focal-difference-antenna-vs-spacetime.html" title="Focal Difference Compared" style="height:980px"></iframe>
-    <a class="alone" href="spacetime/focal-difference-antenna-vs-spacetime.html">Open this one by itself</a>
-  </div>
-  <div class="frame reveal">
-    <iframe src="spacetime/minkowski-to-penrose.html" title="Minkowski to Penrose" style="height:900px"></iframe>
-    <a class="alone" href="spacetime/minkowski-to-penrose.html">Open this one by itself</a>
-  </div>
-</section>
+<article id="shot-behind-cover">
+  <h2><a href="lag-compensation/shot-behind-cover.html">Shot Behind Cover</a></h2>
+  <p class="where">lag-compensation/</p>
+  <p>How does an online shooter decide whether a shot hit when the two players have different pings? Three views of the same firefight, Alice at 250 ms, the server, and Bob at 50 ms, compare three kinds of lag compensation. Based on Lee and Chang (MMSys ’18).</p>
+  <h3>Key results</h3>
+  <ul class="results">
+    <li>Traditional lag compensation rewinds the world by the shooter’s ping, so a low-ping victim can be hit after reaching cover.</li>
+    <li>Ping-limited compensation stops that for shooters over the limit, but they then have to lead a moving target by about their ping.</li>
+    <li>Advanced lag compensation lets low-ping victims appeal a hit. In the authors’ 12-player study, shots behind cover fell from 85 to 5, with no significant change in hit accuracy.</li>
+  </ul>
+  <div class="links"><a class="open" href="lag-compensation/shot-behind-cover.html">Open →</a><a class="top" href="#top">↑ Top</a></div>
+</article>
 
-<section class="chapter" id="geometry">
-  <div class="intro reveal">
-    <p class="eyebrow">Chapter 3 · Hyperbolic geometry</p>
-    <h2>From one hyperbola to the Poincaré disk</h2>
-    <p>Project the spacetime hyperbola onto a line and the whole infinite curve fits inside a short interval. Do the same in one more dimension and you get the Poincaré disk, which has so much room near its rim that a branching tree fits with every edge the same length.</p>
+<article id="hyperbolic-routing-lab">
+  <h2><a href="hyperbolic-routing-lab/index.html">Hyperbolic Routing Lab</a></h2>
+  <p class="where">hyperbolic-routing-lab/</p>
+  <p>Can a network deliver messages using only coordinates in hyperbolic space? This re-runs Kleinberg’s 2007 experiment and also covers the Poincaré disk and ball, coloring curved planes, and frequency reuse.</p>
+  <h3>Key results</h3>
+  <ul class="results">
+    <li>Greedy routing on Kleinberg’s hyperbolic coordinates always delivered. On physical coordinates it failed about 7–10% of the time in typical runs.</li>
+    <li>Hyperbolic routes stay short: 80th-percentile stretch near 1.25, against 4.0 for routing along the tree.</li>
+    <li>A hyperbolic circle of radius 6 is about 33 times longer than a flat one. That extra room is why trees fit.</li>
+  </ul>
+  <div class="context">
+  <h3>Context</h3>
+  <div class="lead">
+    <div class="note"><p>This started with OpenAI’s preprint of September 23, 2026, which shows the flat plane can’t be colored with 5 colors, so the answer to the Hadwiger–Nelson problem is 6 or 7. Flat-plane coloring is the picture behind cellular channel planning, so the next question was how the problem changes when the plane is curved.</p>
+    <p>Following that question went through the Shannon–Hartley theorem, Wi-Fi BSS coloring, routing tables and AI-RAN, and arrived at hyperbolic geometry and Kleinberg’s paper, the best-known result that routes a network with hyperbolic coordinates. The lab was built to see greedy routing, the Poincaré disk and ball, Möbius maps, Kleinberg’s numbers and frequency reuse on a curved plane working, not just described.</p></div>
   </div>
-  <div class="frame reveal">
-    <iframe src="hyperbolic-geometry/hyperboloid-to-poincare.html" title="Hyperboloid to Poincaré" style="height:720px"></iframe>
-    <a class="alone" href="hyperbolic-geometry/hyperboloid-to-poincare.html">Open this one by itself</a>
-  </div>
-  <div class="frame reveal">
-    <iframe src="hyperbolic-geometry/tree-in-poincare-disk.html" title="Tree in the Poincaré Disk" style="height:760px"></iframe>
-    <a class="alone" href="hyperbolic-geometry/tree-in-poincare-disk.html">Open this one by itself</a>
-  </div>
-</section>
-
-<section class="chapter" id="coloring">
-  <div class="intro reveal">
-    <p class="eyebrow">Chapter 4 · Plane coloring</p>
-    <h2>How many colors does the flat plane need?</h2>
-    <p>Color every point of the plane so that no two points exactly 1 apart share a color. A pattern of hexagons does it with 7. The distances behind that pattern come from a simple walk: one step, a 60° turn, another step.</p>
-  </div>
-  <div class="frame reveal">
-    <iframe src="plane-coloring/two-steps-60-degree-turn.html" title="Two Steps, One Turn" style="height:640px"></iframe>
-    <a class="alone" href="plane-coloring/two-steps-60-degree-turn.html">Open this one by itself</a>
-  </div>
-  <div class="frame reveal">
-    <iframe src="plane-coloring/hex-lattice-distances.html" title="Hex Lattice Distances" style="height:1000px"></iframe>
-    <a class="alone" href="plane-coloring/hex-lattice-distances.html">Open this one by itself</a>
-  </div>
-</section>
-
-<section class="chapter wide" id="lab">
-  <div class="intro reveal">
-    <p class="eyebrow">Chapter 5 · Kleinberg 2007 · Izgorodin 2026 · Hadwiger–Nelson</p>
-    <h2>Putting it together: the routing lab</h2>
-    <p>The full lab joins the threads. Embed a network in the Poincaré disk and greedy routing always delivers. Then see what happens to plane coloring and frequency reuse once the plane is curved.</p>
-    <div class="jump" aria-label="Jump to a part of the lab">
-      <button data-to="saddle">Saddle</button><button data-to="disk">Poincaré disk</button><button data-to="mobius">Möbius maps</button><button data-to="greedy">Greedy routing</button><button data-to="numbers">Kleinberg's numbers</button><button data-to="ball">Poincaré ball</button><button data-to="coloring">Coloring curved planes</button><button data-to="reuse">Frequency reuse</button><button data-to="shannon">Shannon</button>
+  <details open><summary>Kleinberg’s paper</summary>
+    <div class="note"><p>Robert Kleinberg, “Geographic Routing Using Hyperbolic Space,” IEEE INFOCOM 2007. Greedy routing sends each packet to whichever neighbor is closest to the destination, using only coordinates and no routing tables. With ordinary map coordinates it can get stuck at a node that has no closer neighbor. Kleinberg proved that if every node gets a coordinate in the hyperbolic plane, computed from a spanning tree of the network using Möbius maps, some neighbor is always strictly closer, so greedy routing delivers on any connected network.</p>
+    <p>His test used 50 random nodes in a circle of radius √5, linked when at most 1 apart, about 9.8 links per node. Euclidean greedy routing failed on 9.3% of routes (23.3% with a barrier in the way). Hyperbolic greedy routing failed on 0%, which is the theorem. Its stretch was 1.2 at the 80th percentile, against 4.1 for routing only along the tree, and its busiest nodes carried 9.1% more load than with Euclidean routing, against 233% more for the tree. Both stay low because a dense network offers short cuts off the tree.</p></div>
+  </details>
+  <details open><summary>What the Poincaré disk and a Möbius map look like</summary>
+    <div class="figs">
+      <figure><canvas data-fig="disk" aria-label="The Poincaré disk tiled by ideal triangles, one shaded"></canvas><figcaption><b>Poincaré disk.</b> The whole hyperbolic plane drawn inside a circle. The rim is infinitely far away, and straight lines are arcs that meet the rim at right angles. Every triangle in this tiling is the same size: the shaded one is no bigger than the slivers near the rim, because lengths are stretched by ds = 2|dz| / (1 − |z|²).</figcaption></figure>
+      <figure><canvas data-fig="mobius" aria-label="The same tiling moved by a Möbius map as the page scrolls"></canvas><figcaption><b>Möbius map.</b> A rigid motion of the disk, z ↦ (αz + β) / (β̄z + ᾱ) with |α|² − |β|² = 1. As you scroll, this one slides the tiling around the top of the rim. The shaded triangle changes shape on the page but keeps its true size, and no distance changes. Composing two maps is multiplying their 2×2 matrices; in Kleinberg’s algorithm a parent hands each child one matrix, and the child computes its own coordinate from it.</figcaption></figure>
     </div>
+  </details>
+  <details><summary>Hyperbolic geometry and greedy routing</summary>
+    <dl class="qa">
+      <dt>How does greedy routing work?</dt>
+      <dd>Each node knows its own coordinate and its neighbors’ coordinates. It hands the packet to whichever neighbor is closest to the destination, and stops if none is closer. In physical coordinates that can get stuck at a node with no closer neighbor. Kleinberg embeds a spanning tree into the hyperbolic plane so that some neighbor is always strictly closer, so delivery never fails.</dd>
+      <dt>What coordinates does hyperbolic geometry use?</dt>
+      <dd>The same point can be written in several systems: the Poincaré disk (inside a unit circle), the Klein disk, the upper half-plane, the hyperboloid (one sheet of t² − x² − y² = 1 in 3D), or polar form with true distance from the center. Routing code usually uses the disk or the hyperboloid.</dd>
+      <dt>How do the saddle and the Poincaré disk relate?</dt>
+      <dd>They are two pictures of the same geometry. A saddle shows negative curvature locally: circles have circumference 2π·sinh r, and triangles add up to less than 180°, the shortfall equal to their area. Hilbert proved the whole plane can’t sit smoothly in 3D space, so the Poincaré disk draws all of it inside a unit circle whose rim is infinitely far away.</dd>
+      <dt>Why do trees fit so well?</dt>
+      <dd>With curvature −1 a circle of radius r has circumference 2π·sinh r, which grows exponentially; at r = 6 that’s 33 times the flat value. A tree’s levels also grow exponentially, so there is room for every branch.</dd>
+      <dt>What is the Poincaré ball?</dt>
+      <dd>The same model in more dimensions. Izgorodin embeds WordNet’s 82,115 noun synsets in a 10-dimensional ball and averages points through flat tangent spaces. In his tests the hyperbolic distances mattered most for choosing nearest neighbors, worth about 5.7 points of mid-level clustering accuracy over a Euclidean embedding.</dd>
+      <dt>Why were Kleinberg’s percentages so low?</dt>
+      <dd>For three different reasons. Hyperbolic failure was 0% because it is a theorem. Stretch and congestion stayed low because a dense network, about 9.8 links per node, offers short cuts off the tree that greedy routing takes.</dd>
+      <dt>Does hyperbolic space help pack data or reuse frequencies?</dt>
+      <dd>Packing works; frequency reuse doesn’t carry over to real radios. Packing: a hub with n spokes needs every leaf closer to the hub than to any other leaf, so the flat plane fits at most 5 spokes, while the hyperbolic plane fits any n once leaves sit at radius about 2 ln(n/π). Frequency reuse: interference depends on real distances in flat space. Even on paper, a hyperbolic tiling with 6 neighbors per cell needs the same 7 channel groups as hexagons, and puts 30 co-channel cells at the reuse distance instead of 6.</dd>
+    </dl>
+  </details>
+  <details><summary>Routing tables and hash tables</summary>
+    <dl class="qa">
+      <dt>Are routing tables hash tables?</dt>
+      <dd>Partly. IP routers match each destination against stored prefixes and take the longest match, using tries or special memory called TCAM. Exact-match hash tables are used elsewhere, for example in Ethernet switches’ MAC address tables.</dd>
+      <dt>Do routing tables still exist in the hyperbolic approach?</dt>
+      <dd>Big tables aren’t needed for forwarding: each node keeps only its neighbors’ coordinates. Two lookups remain. A sender must learn the destination’s coordinate, much as DNS turns names into addresses. And Kleinberg’s paper builds a distributed hash table on top: a key is hashed to a point in the hyperbolic plane and stored at the node nearest it, which his Theorem 3 shows is the same node from any starting point. Hash tables move up a layer; they don’t disappear.</dd>
+      <dt>Does an IP address say nothing about where a destination is?</dt>
+      <dd>IP addresses are hierarchical: one prefix covers a whole network. That grouping keeps the global routing table near a million prefixes instead of billions of devices.</dd>
+      <dt>Does every router update its tables when a phone moves?</dt>
+      <dd>Not in mobile networks. A phone’s data travels in a tunnel from the base station to the core; when it hands over to another cell, only the tunnel’s end moves. Base stations don’t hold global tables.</dd>
+      <dt>Are hyperbolic coordinates permanent?</dt>
+      <dd>No. They come from the spanning tree, so a device that attaches somewhere new gets a new coordinate that senders must learn, and each node joining or leaving costs O(n) operations on average to repair the embedding.</dd>
+      <dt>Does a node only need its neighbors’ coordinates?</dt>
+      <dd>Yes, and that’s the main saving. With Kleinberg’s embedding some neighbor is always strictly closer to any destination, so a packet never gets stuck.</dd>
+      <dt>Is the distance calculation Pythagoras?</dt>
+      <dd>No. The distance in the Poincaré disk is d(z, w) = arcosh(1 + 2|z − w|² / ((1 − |z|²)(1 − |w|²))). It’s cheap to compute, but it isn’t Pythagoras.</dd>
+      <dt>Does machine learning choose the coordinates?</dt>
+      <dd>Kleinberg’s coordinates come from a simple deterministic algorithm, a spanning tree plus Möbius maps, and the delivery guarantee depends on that exact construction. Hyperbolic graph neural networks are research models that learn embeddings for prediction tasks such as delay; they carry no delivery guarantee.</dd>
+      <dt>Do satellite networks look like trees?</dt>
+      <dd>A satellite laser mesh is usually modeled as a grid wrapped around the planet: each satellite links to neighbors in its own orbit and the adjacent ones. That isn’t tree-like. Because the motion is predictable, routes can be computed ahead of time.</dd>
+    </dl>
+  </details>
+  <details><summary>Hash keys and elliptic-curve cryptography</summary>
+    <dl class="qa">
+      <dt>Is a hash-table key “hyperbolic” the way elliptic-curve cryptography is?</dt>
+      <dd>No. Hash tables use ordinary fast hash functions, which turn a key into a bucket number and are designed to scatter nearby keys far apart. Elliptic-curve cryptography is public-key cryptography, used for signatures and key exchange: a public key is a secret number times a base point on a curve y² = x³ + ax + b over a finite field.</dd>
+      <dt>Does “elliptic” mean elliptic geometry?</dt>
+      <dd>No. “Elliptic” in elliptic curves comes from elliptic integrals, the formulas for the arc length of an ellipse. It has nothing to do with elliptic (spherical) geometry, and so nothing to do with its opposite, hyperbolic geometry. Over the complex numbers an elliptic curve is a torus, which is flat. ECC works with points over a finite field, where curvature has no meaning.</dd>
+      <dt>Do hashes and hyperbolic coordinates work alike?</dt>
+      <dd>They do opposite jobs. A hash scatters on purpose. A hyperbolic coordinate keeps structure on purpose, so that distance reflects the network and a router can measure progress toward a destination.</dd>
+      <dt>Does changing one character move an ECC key somewhere else?</dt>
+      <dd>That’s the avalanche property of hash functions. For ECC the closer statement is that a public key reveals nothing usable about the secret number behind it.</dd>
+      <dt>Do hashing and hyperbolic routing ever meet?</dt>
+      <dd>Once: Kleinberg’s distributed hash table hashes a key to a point in the hyperbolic plane, then routes greedily to it. A hash used directly as an address can’t tell a router which neighbor is closer.</dd>
+    </dl>
+  </details>
+  <details><summary>Wi-Fi BSS coloring and hyperbolic routing</summary>
+    <dl class="qa">
+      <dt>What is BSS coloring?</dt>
+      <dd>Wi-Fi 6 (802.11ax) adds a 6-bit “color”, 1 to 63, to each frame header. Neighboring networks still share the same channel; the color only tells a device whose frame it is hearing.</dd>
+      <dt>Does a device ignore a neighbor’s signal and transmit anyway?</dt>
+      <dd>Only under conditions. For a frame with its own color it holds off as usual. For a different color it may raise its detection threshold, anywhere from −82 up to −62 dBm, and transmit if the neighbor’s signal is weaker than that, while lowering its own transmit power in step.</dd>
+      <dt>Does BSS coloring cut interference?</dt>
+      <dd>It works the other way round: it accepts a bit more interference in exchange for more chances to transmit. Throughput in a crowded building goes up; interference doesn’t go down.</dd>
+      <dt>Do the Internet and Starlink route with hyperbolic geometry?</dt>
+      <dd>The Internet routes with tables: BGP between networks and OSPF inside them. Hyperbolic routing is research: Kleinberg proved in 2007 that it can’t get stuck, and Boguñá, Papadopoulos and Krioukov proposed mapping the Internet this way in 2010. SpaceX hasn’t published how Starlink routes.</dd>
+      <dt>Are hyperbolic coordinates physical positions?</dt>
+      <dd>No. They’re computed from the network’s spanning tree and have nothing to do with where the equipment is.</dd>
+      <dt>Can spreading nodes apart in hyperbolic space reduce interference?</dt>
+      <dd>No. Interference depends on real distances between real antennas. Virtual coordinates can spread nodes apart on paper, but the radios stay where they are.</dd>
+      <dt>Does hyperbolic routing avoid traffic jams?</dt>
+      <dd>That’s about congestion, not noise. In Kleinberg’s test, hyperbolic greedy routing put 9.1% more load on its busiest nodes than Euclidean greedy routing, and far less than routing only along the tree, which added 233%.</dd>
+    </dl>
+  </details>
+  <details><summary>RAN and AI-RAN</summary>
+    <div class="note"><p>The radio access network (RAN) is the radios, base stations and links back to the core; user data goes phone → radio link → base station → transport → core → Internet. The AI-RAN Alliance, launched in February 2024 with over 130 members by early 2026, works in three areas: AI-for-RAN uses machine learning to run the radio better, AI-and-RAN shares GPU servers between radio processing and AI workloads, and AI-on-RAN runs AI applications at the network edge.</p></div>
+    <dl class="qa">
+      <dt>Is a cellular network a tree?</dt>
+      <dd>Mostly, as a logical picture. Small cells usually connect over fiber or wireless backhaul to an aggregation point rather than through a macro tower, but the network is a hierarchy, and that hierarchy is where hyperbolic ideas could fit.</dd>
+      <dt>Do base stations keep lists of every node?</dt>
+      <dd>No. A base station tunnels each phone’s traffic to the core network. The RAN does no per-destination routing.</dd>
+      <dt>Does AI-RAN embed the network in hyperbolic space?</dt>
+      <dd>That isn’t part of AI-RAN as the Alliance defines it; at most it’s a research idea. The claim traced back to mnemoverse.com, the company behind Izgorodin’s paper, which is about knowledge graphs, not RAN. Plausible research uses are placing AI workloads across edge GPUs, routing over multi-hop links such as wireless backhaul meshes and satellite links, and reasoning over network telemetry at the right level of detail.</dd>
+      <dt>Does greedy routing give near-zero latency?</dt>
+      <dd>It cuts the state each node stores, not the time a packet takes. Routes run a little longer than the shortest: in Kleinberg’s test, 80% were within 1.2× the shortest path.</dd>
+      <dt>Can hyperbolic coordinates reuse spectrum exponentially more?</dt>
+      <dd>Virtual coordinates don’t move antennas, so they don’t change interference. As a thought experiment, a hyperbolic tiling with 6 neighbors per cell and a reuse distance of 3 tiles still needs 7 channel groups, the same as hexagons, and each cell has 30 co-channel cells at the reuse distance instead of 6.</dd>
+      <dt>Do networks still plan frequencies like the coloring problem?</dt>
+      <dd>Early cellular networks used fixed channel plans like that. LTE and 5G mostly reuse every frequency in every cell and manage interference with scheduling, power control and beamforming.</dd>
+    </dl>
+  </details>
+  <details><summary>The Shannon–Hartley theorem</summary>
+    <div class="eq">C = B · log₂(1 + S/N)</div>
+    <div class="note"><p>C is the most bits per second a channel can carry with errors kept as rare as you like. B is the bandwidth in hertz. S is the received signal power and N the noise power in that bandwidth, both as plain ratios, not decibels. Bandwidth multiplies capacity directly; signal strength only works through the logarithm, so at high SNR doubling the power adds about one bit per second per hertz. Example: 20 MHz at an SNR of 20 dB (a ratio of 100) gives 20 MHz × log₂(101) ≈ 133 Mbit/s.</p></div>
+    <dl class="qa">
+      <dt>What does “error-free below C” mean?</dt>
+      <dd>If the data rate is below C, errors can be made as rare as you want by using longer and longer codes. It doesn’t mean one particular code is perfect. Above C, reliable communication is impossible.</dd>
+      <dt>Does N include interference?</dt>
+      <dd>In the theorem, N is noise only, spread evenly across the band, N = N₀·B. Engineers fold interference in by using SINR = S / (N + I) in place of S/N, an approximation that works well when interference comes from many sources at once.</dd>
+      <dt>Does infinite bandwidth give infinite capacity?</dt>
+      <dd>No. As B grows, N = N₀·B grows with it and the signal-to-noise ratio falls. Capacity levels off at S / (N₀ ln 2), about 1.44 × S/N₀.</dd>
+      <dt>Does it set how far data can be compressed?</dt>
+      <dd>Compression limits come from two other Shannon results, the source-coding theorem (entropy) and rate–distortion theory. Shannon–Hartley is about sending data through noise, though reading bits back off a disk or tape is itself a noisy channel.</dd>
+      <dt>Is the theorem 2D or 3D?</dt>
+      <dd>Neither. The formula has no physical space in it. Distance and layout only enter through S and N: received power falls with distance, and interference depends on where other transmitters are. Calling it 1D is loose too: it describes one link, with time and frequency as its variables.</dd>
+      <dt>Where is the geometry, then?</dt>
+      <dd>A signal of bandwidth B lasting T seconds is pinned down by about 2BT samples, so it is one point in a space of about 2BT dimensions; one megahertz for one millisecond is already about 2,000. Shannon proved the theorem by packing small noise spheres inside a big sphere in that space. Capacity is how many fit.</dd>
+    </dl>
+  </details>
+  <details><summary>Takeaways</summary>
+    <ul class="take">
+      <li>Hyperbolic geometry’s one big property is exponential room. Almost every real use traces back to it.</li>
+      <li>Hyperbolic coordinates are virtual. They change how you address and route, never where antennas are or how radio waves interfere.</li>
+      <li>Greedy routing cuts the state each node keeps. It doesn’t cut latency, and you still need a lookup to learn where a destination is.</li>
+      <li>Plane coloring and frequency reuse share the 7-cell hexagon picture, but they are different math problems, and modern networks reuse every frequency everywhere.</li>
+      <li>Coloring can lower interference, never noise, and it always costs bandwidth.</li>
+      <li>Similar names hide different ideas: elliptic curves aren’t elliptic geometry, tanh activations aren’t Poincaré projections, and antenna hyperbolas aren’t light cones.</li>
+    </ul>
+  </details>
   </div>
-  <div class="frame">
-    <iframe src="hyperbolic-routing-lab/index.html" title="Hyperbolic Routing Lab" loading="lazy" style="height:9000px"></iframe>
-    <a class="alone" href="hyperbolic-routing-lab/index.html">Open the lab by itself</a>
+  <div class="links"><a class="open" href="hyperbolic-routing-lab/index.html">Open →</a><a class="top" href="#top">↑ Top</a></div>
+</article>
+
+<article id="two-antenna-interference">
+  <h2><a href="wireless-interference/two-antenna-interference.html">Two-Antenna Interference</a></h2>
+  <p class="where">wireless-interference/</p>
+  <p>Does the interference pattern of two antennas look the same as a spacetime diagram?</p>
+  <h3>Key results</h3>
+  <ul class="results">
+    <li>Every peak and null curve is a hyperbola with the two antennas as its foci.</li>
+    <li>Each curve has its own asymptote angle, sin θ = k/D, so there is no single shared X like the light cone in a spacetime diagram.</li>
+  </ul>
+  <div class="context">
+  <h3>Context</h3>
+  <div class="lead">
+    <div class="note"><p>This checks whether the interference pattern of two antennas looks the same as the hyperbolas of a spacetime diagram and the Penrose diamond built from them.</p></div>
+    <dl class="qa">
+      <dt>Are both governed by the same geometry?</dt>
+      <dd>They look alike but are built differently. An antenna hyperbola is the set of points with the same difference of distances to two towers. A spacetime hyperbola is the set of events with the same t² − x², a difference of squares.</dd>
+      <dt>Do antenna hyperbolas share one X like a spacetime diagram?</dt>
+      <dd>No. Spacetime hyperbolas all share the 45° light cone. Each antenna hyperbola has its own asymptote angle, sin θ = k/D, where k is the path difference and D the antenna spacing, so they fan out instead of sharing one X.</dd>
+    </dl>
   </div>
+  </div>
+  <div class="links"><a class="open" href="wireless-interference/two-antenna-interference.html">Open →</a><a class="top" href="#top">↑ Top</a></div>
+</article>
+
+<article id="focal-difference-antenna-vs-spacetime">
+  <h2><a href="spacetime/focal-difference-antenna-vs-spacetime.html">Focal Difference Compared</a></h2>
+  <p class="where">spacetime/</p>
+  <p>Antenna hyperbolas and spacetime hyperbolas both keep a constant distance difference between two foci. Does that difference mean the same thing in both?</p>
+  <h3>Key results</h3>
+  <ul class="results">
+    <li>For antennas it is a real path difference between two towers, the time difference of arrival × c. Changing it changes the curve’s shape.</li>
+    <li>In spacetime the foci are only points on the drawing. The quantity that matters is the interval s = √(t² − x²), and changing s rescales the curve without changing its shape.</li>
+  </ul>
+  <div class="context">
+  <h3>Context</h3>
+  <div class="lead">
+    <dl class="qa">
+      <dt>How do the variables and the distance difference change between the two kinds of hyperbola?</dt>
+      <dd>On both, every point has the same difference of distances to the two foci. What changes is what that difference means.</dd>
+      <dt>Antennas</dt>
+      <dd>The variables are positions on the ground, the foci are the real towers, and the difference k is a real path difference. Divided by the speed of light it is an arrival-time difference, which is how hyperbolic positioning locates a receiver. Changing k keeps the towers fixed and reshapes the curve.</dd>
+      <dt>Spacetime</dt>
+      <dd>The variables are an event’s time t and position x. The quantity that matters is the interval s = √(t² − x²), the time a clock shows after travelling from the origin to that event at constant speed. The difference of distances to the foci is 2s, with foci at t = ±s√2, but those foci are only points on paper. Changing s rescales the curve without changing its shape.</dd>
+    </dl>
+  </div>
+  </div>
+  <div class="links"><a class="open" href="spacetime/focal-difference-antenna-vs-spacetime.html">Open →</a><a class="top" href="#top">↑ Top</a></div>
+</article>
+
+<article id="minkowski-to-penrose">
+  <h2><a href="spacetime/minkowski-to-penrose.html">Minkowski to Penrose</a></h2>
+  <p class="where">spacetime/</p>
+  <p>What happens to a spacetime diagram when the whole infinite plane is squeezed into a finite picture?</p>
+  <h3>Key results</h3>
+  <ul class="results">
+    <li>Light rays stay at 45° the whole way, and the light-cone X ends at the midpoints of the diamond’s edges.</li>
+    <li>Lines of constant t pinch to the side corners i⁰. Lines of constant x pinch to the top and bottom corners i⁺ and i⁻.</li>
+    <li>The hyperbolas bunch up along the edges ℐ⁺ and ℐ⁻.</li>
+  </ul>
+  <div class="context">
+  <h3>Context</h3>
+  <div class="lead">
+    <dl class="qa">
+      <dt>Do the X and the hyperbolas curve inward to become the Penrose diagram?</dt>
+      <dd>The hyperbolas do curve inward. The X doesn’t: the light-cone lines stay straight at 45° and only get shorter. Penrose squeezes the diagram by applying arctan to the light-ray coordinates t − x and t + x, which keeps light rays at 45°.</dd>
+      <dt>Do the hyperbolas end at the corners?</dt>
+      <dd>No. The corners collect the grid lines: lines of constant position run to the top and bottom corners (i⁺, i⁻), and lines of constant time run to the side corners (i⁰). The hyperbolas end on the diagonal edges ℐ⁺ and ℐ⁻.</dd>
+    </dl>
+  </div>
+  </div>
+  <div class="links"><a class="open" href="spacetime/minkowski-to-penrose.html">Open →</a><a class="top" href="#top">↑ Top</a></div>
+</article>
+
+<article id="hyperboloid-to-poincare">
+  <h2><a href="hyperbolic-geometry/hyperboloid-to-poincare.html">Hyperboloid to Poincaré</a></h2>
+  <p class="where">hyperbolic-geometry/</p>
+  <p>How does a spacetime-style hyperbola turn into the Poincaré disk?</p>
+  <h3>Key results</h3>
+  <ul class="results">
+    <li>Projecting t² − x² = 1 from the point (0, −1) puts the point at hyperbolic distance r at tanh(r/2).</li>
+    <li>So the whole infinite curve fits between −1 and 1. In two dimensions the same projection turns the hyperboloid t² − x² − y² = 1 into the Poincaré disk.</li>
+  </ul>
+  <div class="context">
+  <h3>Context</h3>
+  <div class="lead">
+    <dl class="qa">
+      <dt>Do a Penrose diagram and the Poincaré disk do the same thing?</dt>
+      <dd>Both squeeze infinity into a finite picture, but of different spaces. Minkowski spacetime is flat, with a minus sign in its distance. The exact bridge to hyperbolic geometry is one sheet of t² − x² − y² = 1 inside it: that sheet is the hyperbolic plane, and projecting it from (0, 0, −1) gives the Poincaré disk, with a point at distance r landing at tanh(r/2).</dd>
+      <dt>Is the tanh activation function in neural networks a Poincaré projection?</dt>
+      <dd>It shares the formula, not the geometry. tanh does squeeze the whole real line into (−1, 1), and tanh(r/2) is how the Poincaré disk places a point at distance r, but the activation function isn’t projecting anything.</dd>
+    </dl>
+  </div>
+  </div>
+  <div class="links"><a class="open" href="hyperbolic-geometry/hyperboloid-to-poincare.html">Open →</a><a class="top" href="#top">↑ Top</a></div>
+</article>
+
+<article id="tree-in-poincare-disk">
+  <h2><a href="hyperbolic-geometry/tree-in-poincare-disk.html">Tree in the Poincaré Disk</a></h2>
+  <p class="where">hyperbolic-geometry/</p>
+  <p>Why do trees fit so well in hyperbolic space?</p>
+  <h3>Key results</h3>
+  <ul class="results">
+    <li>Each level of a branching tree sits closer to the rim, yet every edge has the same hyperbolic length.</li>
+    <li>The rim is infinitely far away, so the crowding near it is only in the picture.</li>
+    <li>Kleinberg (2007) uses this to give every node in a network a routing address.</li>
+  </ul>
+  <div class="context">
+  <h3>Context</h3>
+  <div class="lead">
+    <dl class="qa">
+      <dt>Why is there room for a whole tree?</dt>
+      <dd>With curvature −1 a circle of radius r has circumference 2π·sinh r, which grows exponentially; at r = 6 that’s 33 times the flat value. A tree’s levels also grow exponentially, so every branch fits.</dd>
+      <dt>Where do concepts sit in a hyperbolic embedding?</dt>
+      <dd>General concepts tend to sit near the center and specific ones near the rim. The papers don’t describe layers of constant Shannon information or word frequency, and standard LLM embeddings are Euclidean, not hyperbolic.</dd>
+    </dl>
+  </div>
+  </div>
+  <div class="links"><a class="open" href="hyperbolic-geometry/tree-in-poincare-disk.html">Open →</a><a class="top" href="#top">↑ Top</a></div>
+</article>
+
+<article id="two-steps-60-degree-turn">
+  <h2><a href="plane-coloring/two-steps-60-degree-turn.html">Two Steps, One Turn</a></h2>
+  <p class="where">plane-coloring/</p>
+  <p>Where does √3 come from on a triangular lattice?</p>
+  <h3>Key results</h3>
+  <ul class="results">
+    <li>One step, a 60° turn and another step leave you √3·d ≈ 1.732d from the start.</li>
+    <li>The 60° is the exterior angle you turn through. The two steps enclose 120°.</li>
+  </ul>
+  <div class="context">
+  <h3>Context</h3>
+  <div class="lead">
+    <dl class="qa">
+      <dt>Where is the two-step walk with the 60° turn?</dt>
+      <dd>The centers of the hexagons form a grid of equilateral triangles with step d = √3·s, where s is the hexagon’s side. One step, a 60° turn, then a second step lands √3·d from the start.</dd>
+      <dt>Is the 60° inside the triangle or outside it?</dt>
+      <dd>Outside. The 60° is the exterior angle, how far you turn off your heading. The two legs enclose an interior angle of 120°, making an isosceles triangle with sides d and d.</dd>
+      <dt>Why is the straight line √3·d?</dt>
+      <dd>Dropping a perpendicular from the turning point splits the triangle into two 30-60-90 halves, each with base √3/2·d, so the straight line is √3·d.</dd>
+    </dl>
+  </div>
+  </div>
+  <div class="links"><a class="open" href="plane-coloring/two-steps-60-degree-turn.html">Open →</a><a class="top" href="#top">↑ Top</a></div>
+</article>
+
+<article id="hex-lattice-distances">
+  <h2><a href="plane-coloring/hex-lattice-distances.html">Hex Lattice Distances</a></h2>
+  <p class="where">plane-coloring/</p>
+  <p>Why does the hexagon coloring of the plane need 7 colors instead of 3 or 4?</p>
+  <h3>Key results</h3>
+  <ul class="results">
+    <li>A hex pattern whose nearest same-colored tile is √K·d away uses K colors (K = 1, 3, 4, 7, 9, 12…).</li>
+    <li>With 3 or 4 colors a tile cannot be narrower than 1 and also far enough from the next tile of the same color.</li>
+    <li>With 7 colors any hexagon side between 1/√7 ≈ 0.378 and 0.5 works. Isbell’s side of 0.4 leaves a gap of about 1.058.</li>
+  </ul>
+  <div class="context">
+  <h3>Context</h3>
+  <div class="lead">
+    <div class="note"><p>OpenAI’s preprint of September 23, 2026 shows the flat plane can’t be colored with 5 colors, so the answer is 6 or 7. It is checked in the Lean proof assistant but not yet peer reviewed. Flat hexagon layouts are used for wireless channel planning, and flat is the right model there, because radio travels through ordinary space and Earth’s curvature is negligible across a cell. That raised the question of how the coloring changes when the plane is curved, and of where the √3, √4 and √7 distances come from.</p></div>
+  </div>
+  <details><summary>The 6–7 coloring problem</summary>
+    <dl class="qa">
+      <dt>What is the problem?</dt>
+      <dd>The Hadwiger–Nelson problem asks for the fewest colors that can paint every point of the flat plane so that no two points exactly 1 apart share a color. From 1950 the answer was known to be between 4 and 7; Aubrey de Grey raised the lower bound to 5 in 2018, and OpenAI’s preprint rules out 5. Seven always works: Isbell’s hexagons of side s need 2s &lt; 1 and a gap of √7·s &gt; 1, which holds for any s between 0.378 and 0.5.</dd>
+      <dt>Does curving the plane change it?</dt>
+      <dd>Yes. On a sphere the answer depends on how the forbidden distance compares with the radius. On the hyperbolic plane, with forbidden distance d, small d behaves like the flat plane, but the known bounds differ: at least 4 colors for every d, at least 6 for large d when color regions are measurable (DeCorte and Golubev), and best-known colorings whose color count grows with d (Parlier and Petit). Curving the plane changes the problem without making it easier.</dd>
+      <dt>Do more hexagons fit at a corner on the hyperbolic plane, and does that change the color count?</dt>
+      <dd>The first part is true: four or more regular hexagons can meet at a corner, where the flat plane allows exactly three. Whether that changes the color count isn’t known; see the bounds above.</dd>
+    </dl>
+  </details>
+  <details><summary>Coloring and wireless interference</summary>
+    <dl class="qa">
+      <dt>Is the coloring problem applied to wireless interference?</dt>
+      <dd>A close cousin is. Assigning channels to cells forbids every distance below a reuse distance, not one exact distance, so it is a different and better-understood problem: coloring a graph of cells. The two share one picture, the 7-color hexagon pattern.</dd>
+      <dt>Is the unit distance the interference radius of a transmitter?</dt>
+      <dd>No. The math problem forbids exactly one distance; two points 0.5 apart may share a color. Interference forbids everything closer than the reuse distance.</dd>
+      <dt>Does a 7-frequency plan remove interference?</dt>
+      <dd>It lowers it. The 7-cell pattern spaces out cells that share a channel; the textbook estimate of the signal-to-interference ratio is (√(3K))<sup>γ</sup>/6, about 18 dB for K = 7 and path-loss exponent γ = 4. It never removes interference.</dd>
+      <dt>Does curving the map change interference?</dt>
+      <dd>Drawing a map differently doesn’t move towers, and radio waves travel through ordinary flat space. Earth’s curvature only limits how far a tower can see over the horizon. Also, interference is I, not N.</dd>
+      <dt>Does a good coloring drop noise to zero and maximize capacity?</dt>
+      <dd>Noise N is set by temperature and bandwidth; no channel plan touches it. Coloring lowers interference I, and it costs bandwidth: with K channel groups each cell gets B/K. Capacity per cell is roughly (B/K)·log₂(1 + SINR), and for realistic propagation small K wins. That’s why LTE and 5G reuse every frequency in every cell.</dd>
+    </dl>
+  </details>
+  <details><summary>The √3, √4 and √7 walks</summary>
+    <dl class="qa">
+      <dt>Where does √7 come from?</dt>
+      <dd>Walk 2 steps straight ahead, turn 60° and take 1 step. The law of cosines gives c² = (i² + ij + j²)·d² with i = 2 and j = 1, so c² = 7d². In general a hex coloring whose nearest same-colored tile sits at that distance uses K = i² + ij + j² colors, so K can be 1, 3, 4, 7, 9, 12, 13.</dd>
+      <dt>Is there a 6-color hexagon pattern?</dt>
+      <dd>Not of this kind: 6 isn’t of the form i² + ij + j². The distances √3·d and √4·d belong to the 3-color and 4-color patterns.</dd>
+      <dt>What makes 7 colors work?</dt>
+      <dd>The gap. The nearest same-colored tiles are s apart with 3 colors, √3·s with 4 and √7·s with 7. A valid coloring needs tiles narrower than 1 (2s &lt; 1) and a gap above 1. With 3 or 4 colors those contradict each other; with 7 they hold for any s between 1/√7 ≈ 0.378 and 0.5. It isn’t about rotating tiles out of alignment.</dd>
+      <dt>Did Isbell use a side of 2/5?</dt>
+      <dd>That couldn’t be confirmed. A side of 0.4 sits inside the working range, so it works, but so does any side between 0.378 and 0.5.</dd>
+    </dl>
+  </details>
+  </div>
+  <div class="links"><a class="open" href="plane-coloring/hex-lattice-distances.html">Open →</a><a class="top" href="#top">↑ Top</a></div>
+</article>
+
 </section>
+<div class="loader" id="loader" role="status" aria-label="Loading more artifacts"><i></i></div>
 </main>
-
-<footer>
-  <p>Every explainer is a plain HTML file with no build step, and each one also works on its own page. Source and references are on <a href="https://github.com/amittenak47/ccartifacts">GitHub</a>.</p>
-</footer>
-
+<script src="assets/farey-bg.js"></script>
 <script>
 (function(){
-const root=document.documentElement;
-const reduce=matchMedia('(prefers-reduced-motion: reduce)');
-const navH=()=>document.querySelector('nav.chapters').offsetHeight;
+const root=document.documentElement,reduce=matchMedia('(prefers-reduced-motion: reduce)');
+const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+const cards=[...document.querySelectorAll('article[id]')];
+const toc=document.getElementById('toc'),loader=document.getElementById('loader'),hero=document.querySelector('.hero');
+const navH=()=>document.querySelector('nav.bar').offsetHeight;
 
-/* Frames: size each iframe to the height its page reports, and remember where its sections start. */
-const frames=[...document.querySelectorAll('.frame iframe')];
-const lab=document.querySelector('#lab iframe');
-let pending=null,pendingTimer=0;
-addEventListener('message',e=>{
-  const d=e.data;
-  if(!d||d.ccartifacts!=='size'||typeof d.h!=='number')return;
-  const f=frames.find(f=>f.contentWindow===e.source);
-  if(!f)return;
-  f.style.height=Math.max(80,d.h)+'px';
-  f.anchors=d.anchors||{};
-  if(f===lab&&pending){clearTimeout(pendingTimer);pendingTimer=setTimeout(()=>jumpInLab(pending),200);}
-});
-function jumpInLab(id){
-  if(!lab.anchors||lab.anchors[id]==null)return;
-  pending=null;
-  const y=lab.getBoundingClientRect().top+scrollY+lab.anchors[id]-navH()-12;
-  scrollTo({top:y,behavior:reduce.matches?'auto':'smooth'});
-}
-document.querySelectorAll('.jump button').forEach(b=>b.addEventListener('click',()=>{
-  const id=b.dataset.to;
-  if(lab.anchors&&lab.anchors[id]!=null){jumpInLab(id);return;}
-  // The lab loads lazily: bring it on screen, then jump once it reports where its sections are.
-  pending=id;
-  scrollTo({top:lab.getBoundingClientRect().top+scrollY-navH()-12,behavior:'auto'});
-}));
+// Build the strip at the top from the articles, so adding an article is the only edit needed.
+toc.innerHTML=cards.map((a,i)=>`<li><a href="#${a.id}"><span>${i+1}</span>${a.querySelector('h2').textContent}</a></li>`).join('');
+const chips=[...toc.querySelectorAll('a')];
 
-/* Chapter bar: highlight the chapter in view and keep its chip visible. */
-const links=new Map([...document.querySelectorAll('nav.chapters a')].map(a=>[a.hash.slice(1),a]));
-const row=document.querySelector('nav.chapters .row');
-const spy=new IntersectionObserver(es=>{
-  es.forEach(e=>{
-    if(!e.isIntersecting)return;
-    links.forEach(a=>a.removeAttribute('aria-current'));
-    const a=links.get(e.target.id);
-    if(!a)return;
-    a.setAttribute('aria-current','true');
-    row.scrollTo({left:a.offsetLeft-row.clientWidth/2+a.offsetWidth/2,behavior:reduce.matches?'auto':'smooth'});
+/* The lab's two figures. The disk is still; the Möbius map slides the same tiling as its card
+   moves up the screen, so the shaded triangle travels toward the top of the rim. */
+const figs=[...document.querySelectorAll('canvas[data-fig]')];
+function drawFigs(){
+  const css=getComputedStyle(root);
+  figs.forEach(cv=>{
+    if(cv.closest('article').hidden||!cv.clientWidth)return;
+    const d=Math.min(devicePixelRatio||1,2),w=cv.clientWidth,px=Math.round(w*d);
+    if(cv.width!==px){cv.width=px;cv.height=px;}
+    const c=cv.getContext('2d');c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,w,w);
+    let shift=0;
+    if(cv.dataset.fig==='mobius'){const r=cv.getBoundingClientRect();shift=reduce.matches?0.6:2.2*clamp((innerHeight*0.95-r.top)/(innerHeight*0.8));}
+    fareyDraw(c,{ox:w/2,oy:w/2,R:w/2-2,shift,rim:0.9,lines:0.6,lineWidth:0.9,color:css.getPropertyValue('--text-secondary').trim(),fill:{color:css.getPropertyValue('--text-accent').trim(),alpha:0.4}});
   });
-},{rootMargin:'-45% 0px -54% 0px'});
-document.querySelectorAll('.chapter').forEach(s=>spy.observe(s));
-addEventListener('scroll',()=>{if(scrollY<document.querySelector('.hero').offsetHeight*0.5)links.forEach(a=>a.removeAttribute('aria-current'));},{passive:true});
-
-/* Reveal: fade blocks in the first time they come on screen. */
-const rev=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');rev.unobserve(e.target);}}),{rootMargin:'0px 0px -8% 0px'});
-document.querySelectorAll('.reveal').forEach(el=>rev.observe(el));
-
-/* Background: the Farey tessellation of the Poincaré disk. Its geodesics join
-   fractions p/q and r/s with |ps − qr| = 1 on the boundary. Scrolling slides the
-   upper half-plane by z → z + s, a symmetry of the tessellation, so the pattern
-   flows around one boundary point and repeats with every whole step. */
-const bg=document.getElementById('bg'),cx2=bg.getContext('2d');
-const edges=[],K=24,N=12;
-function farey(a,b,c,d){const p=a+c,q=b+d;if(q>N)return;edges.push([p/q,a/b],[p/q,c/d]);farey(a,b,p,q);farey(p,q,c,d);}
-for(let n=-K;n<K;n++){edges.push([n,n+1],[n,Infinity]);farey(n,1,n+1,1);}
-const css=n=>getComputedStyle(root).getPropertyValue(n).trim();
-let W=0,H=0,dpr=1,queued=false;
-function resize(){dpr=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;bg.width=Math.round(W*dpr);bg.height=Math.round(H*dpr);paint();}
-function paint(){
-  queued=false;
-  const heroH=document.querySelector('.hero').offsetHeight||H;
-  const k=Math.min(1,scrollY/heroH), wide=W>=880;
-  // Disk sits to the right of the title, then drifts to the middle as the chapters start.
-  const R=wide?Math.min(H*0.46,W*0.36):Math.min(W*0.58,H*0.36);
-  const ox=wide?W*(0.72-0.22*k):W*0.5, oy=wide?H*0.5:H*(0.3+0.2*k);
-  const shift=reduce.matches?0.35:(scrollY/520)%1;
-  cx2.setTransform(dpr,0,0,dpr,0,0);
-  cx2.clearRect(0,0,W,H);
-  cx2.strokeStyle=css('--text-secondary')||'#888';
-  cx2.globalAlpha=(wide?0.5:0.34)-(wide?0.36:0.22)*k;
-  cx2.lineWidth=1;
-  cx2.beginPath();cx2.arc(ox,oy,R,0,2*Math.PI);cx2.stroke();
-  cx2.globalAlpha=(wide?0.38:0.22)-(wide?0.29:0.14)*k;
-  cx2.lineWidth=0.8;
-  cx2.beginPath();
-  // Cayley map sends real x to the boundary angle atan2(−2x, x² − 1); ∞ goes to the top of the disk.
-  const ang=x=>x===Infinity?Math.PI/2:Math.atan2(-2*x,x*x-1)+Math.PI/2;
-  for(const [a,b] of edges){
-    const t1=ang(a+shift),t2=ang(b===Infinity?b:b+shift);
-    let m=(t1+t2)/2,h=Math.abs(t1-t2)/2;
-    if(h>Math.PI/2){h=Math.PI-h;m+=Math.PI;}
-    const p1x=ox+R*Math.cos(t1),p1y=oy-R*Math.sin(t1),p2x=ox+R*Math.cos(t2),p2y=oy-R*Math.sin(t2);
-    if(Math.cos(h)<1e-4){cx2.moveTo(p1x,p1y);cx2.lineTo(p2x,p2y);continue;}
-    const r=R*Math.tan(h);
-    if(r<0.7)continue;
-    // A geodesic is the arc of the circle through both endpoints that meets the rim at right angles.
-    const ccx=ox+R*Math.cos(m)/Math.cos(h),ccy=oy-R*Math.sin(m)/Math.cos(h);
-    const f1=Math.atan2(p1y-ccy,p1x-ccx);
-    let sw=Math.atan2(p2y-ccy,p2x-ccx)-f1;
-    while(sw>Math.PI)sw-=2*Math.PI;
-    while(sw<-Math.PI)sw+=2*Math.PI;
-    cx2.moveTo(p1x,p1y);
-    cx2.arc(ccx,ccy,r,f1,f1+sw,sw<0);
-  }
-  cx2.stroke();
-  // Progress line under the chapter bar.
-  const max=document.documentElement.scrollHeight-H;
-  document.getElementById('progress').style.transform='scaleX('+(max>0?Math.min(1,scrollY/max):0)+')';
 }
-const queue=()=>{if(!queued){queued=true;requestAnimationFrame(paint);}};
+
+/* Infinite scroll: cards appear in batches as the end of the list comes on screen.
+   Jumping to a card, or coming back to one, loads everything up to it first. */
+const BATCH=3;
+let shown=Math.max(BATCH,(history.state&&history.state.shown)||0);
+const hashCard=location.hash&&document.getElementById(location.hash.slice(1));
+if(hashCard&&cards.includes(hashCard))shown=Math.max(shown,cards.indexOf(hashCard)+1);
+function showThrough(n){
+  shown=Math.min(cards.length,Math.max(shown,n));
+  cards.forEach((c,i)=>c.hidden=i>=shown);
+  loader.hidden=shown>=cards.length;
+  try{history.replaceState(Object.assign({},history.state,{shown}),'');}catch(e){}
+}
+showThrough(shown);
+let loading=false;
+function loadMore(){
+  if(loading||shown>=cards.length)return;
+  loading=true;
+  setTimeout(()=>{loading=false;showThrough(shown+BATCH);if(!loader.hidden&&loader.getBoundingClientRect().top<innerHeight+200)loadMore();},reduce.matches?0:350);
+}
+new IntersectionObserver(es=>{if(es[0].isIntersecting)loadMore();},{rootMargin:'0px 0px 200px 0px'}).observe(loader);
+
+// Links within the page scroll smoothly. Arriving from another page jumps straight to the entry.
+document.addEventListener('click',e=>{
+  const a=e.target.closest('a[href^="#"]');if(!a)return;
+  const el=document.getElementById(a.getAttribute('href').slice(1));if(!el)return;
+  e.preventDefault();
+  if(cards.includes(el))showThrough(cards.indexOf(el)+1);
+  history.pushState(Object.assign({},history.state,{shown}),'',a.getAttribute('href'));
+  el.scrollIntoView({behavior:reduce.matches?'auto':'smooth'});
+});
+
+// The strip scrolls sideways with the mouse wheel while it has room to move.
+toc.addEventListener('wheel',e=>{
+  if(Math.abs(e.deltaX)>Math.abs(e.deltaY))return;
+  const max=toc.scrollWidth-toc.clientWidth;
+  if(max<=0||(e.deltaY<0&&toc.scrollLeft<=0)||(e.deltaY>0&&toc.scrollLeft>=max-1))return;
+  e.preventDefault();toc.scrollLeft+=e.deltaY;
+},{passive:false});
+
+/* One pass per frame: reading progress, the current card in the strip, and the key results. */
+let current=null,queued=false;
+function frame(){
+  queued=false;
+  const max=root.scrollHeight-innerHeight;
+  document.getElementById('progress').style.transform='scaleX('+(max>0?clamp(scrollY/max):0)+')';
+  const line=navH()+innerHeight*0.35;let on=null;
+  cards.forEach(c=>{
+    if(c.hidden)return;
+    const r=c.getBoundingClientRect();
+    if(r.top<line)on=c;
+    // Each result turns on as the card climbs from the bottom of the screen towards the top.
+    const p=reduce.matches?1:clamp((innerHeight*0.92-r.top)/(innerHeight*0.6));
+    const lis=c.querySelectorAll('.results li');
+    lis.forEach((li,i)=>li.classList.toggle('on',p>=(i+1)/(lis.length+1)));
+  });
+  drawFigs();
+  if(scrollY<hero.offsetHeight*0.5)on=null;
+  if(on!==current){
+    if(current)current.classList.remove('active');
+    chips.forEach(a=>a.removeAttribute('aria-current'));
+    current=on;
+    if(on){
+      on.classList.add('active');
+      const chip=chips[cards.indexOf(on)];chip.setAttribute('aria-current','true');
+      toc.scrollTo({left:chip.parentElement.offsetLeft-toc.clientWidth/2+chip.offsetWidth/2,behavior:reduce.matches?'auto':'smooth'});
+    }else toc.scrollTo({left:0,behavior:reduce.matches?'auto':'smooth'});
+  }
+}
+const queue=()=>{if(!queued){queued=true;requestAnimationFrame(frame);}};
 addEventListener('scroll',queue,{passive:true});
-addEventListener('resize',resize);
-matchMedia('(prefers-color-scheme: dark)').addEventListener('change',queue);
-reduce.addEventListener('change',queue);
-resize();
+addEventListener('resize',queue);
+root.classList.add('js');
+frame();
+
+/* Background: three layers on one fixed canvas, each moving at its own fraction of the
+   scroll speed. Slowest are three soft color washes; then the Farey disk, which starts
+   beside the title and scrolls away upward; then drawings from the artifacts, which pass
+   by further down: antenna hyperbolas, a Penrose diamond and the 7-color hexagons. */
+const bg=document.getElementById('bg'),bx=bg.getContext('2d');
+const tok=n=>getComputedStyle(root).getPropertyValue(n).trim();
+let BW=0,BH=0,bdpr=1,bgQueued=false;
+function line(f,n){bx.beginPath();for(let i=0;i<=n;i++){const[x,y]=f(i/n);i?bx.lineTo(x,y):bx.moveTo(x,y);}bx.stroke();}
+function glow(x,y,r,color){
+  const g=bx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,color);g.addColorStop(1,'rgba(0,0,0,0)');
+  bx.fillStyle=g;bx.fillRect(x-r,y-r,2*r,2*r);
+}
+// Peaks (solid) and nulls (dashed) of two antennas: hyperbolas with the antennas as foci.
+function antennas(cx,cy,S,color,alpha){
+  const d=S*0.2,lam=d*0.5;bx.strokeStyle=color;
+  for(let m=-3.5;m<=3.5;m+=0.5){
+    const a=m*lam/2,peak=Number.isInteger(m);bx.globalAlpha=alpha*(peak?1:0.55);bx.lineWidth=peak?1.4:1;bx.setLineDash(peak?[]:[4,5]);
+    if(a===0){line(u=>[cx,cy+(u-0.5)*S*1.4],2);continue;}
+    const b=Math.sqrt(d*d-a*a);line(u=>{const t=(u-0.5)*4.4;return[cx+a*Math.cosh(t),cy+b*Math.sinh(t)];},90);
+  }
+  bx.setLineDash([]);bx.globalAlpha=alpha;bx.fillStyle=color;
+  for(const x of[cx-d,cx+d]){bx.beginPath();bx.arc(x,cy,3.5,0,Math.PI*2);bx.fill();}
+}
+// The Penrose diamond: light rays and hyperbolas after the arctan squeeze.
+function penrose(cx,cy,S,color,accent,alpha){
+  const R=S*0.46,sq=u=>(2/Math.PI)*Math.atan(u),map=(x,t)=>[cx+(sq(t+x)-sq(t-x))/2*R,cy-(sq(t-x)+sq(t+x))/2*R];
+  bx.globalAlpha=alpha;bx.strokeStyle=color;bx.lineWidth=1.2;
+  bx.beginPath();bx.moveTo(cx,cy-R);bx.lineTo(cx+R,cy);bx.lineTo(cx,cy+R);bx.lineTo(cx-R,cy);bx.closePath();bx.stroke();
+  bx.lineWidth=1.1;
+  for(const q of[0.6,1.3,2.2])for(const s of[1,-1]){
+    line(u=>{const v=(u-0.5)*12;return map(q*Math.sinh(v),s*q*Math.cosh(v));},160);
+    line(u=>{const v=(u-0.5)*12;return map(s*q*Math.cosh(v),q*Math.sinh(v));},160);
+  }
+  bx.strokeStyle=accent;bx.setLineDash([5,5]);bx.lineWidth=1.3;
+  bx.beginPath();bx.moveTo(cx-R/2,cy-R/2);bx.lineTo(cx+R/2,cy+R/2);bx.moveTo(cx+R/2,cy-R/2);bx.lineTo(cx-R/2,cy+R/2);bx.stroke();bx.setLineDash([]);
+}
+// Hexagons colored (q + 3r) mod 7, so each tile's six neighbours all differ.
+function hexes(cx,cy,S,alpha,dark){
+  const s=S*0.085,reach=4.6,L=dark?42:62,C=dark?60:55;
+  for(let r=-6;r<=6;r++)for(let q=-6;q<=6;q++){
+    const dist=(Math.abs(q)+Math.abs(r)+Math.abs(q+r))/2;if(dist>reach)continue;
+    const x=cx+s*Math.sqrt(3)*(q+r/2),y=cy+s*1.5*r,k=((q+3*r)%7+7)%7;
+    bx.globalAlpha=alpha*(1-dist/(reach+1.5));
+    bx.fillStyle=`hsl(${(k*360/7+170)%360} ${C}% ${L}%)`;
+    bx.beginPath();for(let i=0;i<6;i++){const a=Math.PI/6+i*Math.PI/3,px=x+s*0.94*Math.cos(a),py=y+s*0.94*Math.sin(a);i?bx.lineTo(px,py):bx.moveTo(px,py);}bx.closePath();bx.fill();
+  }
+}
+function paintBg(){
+  bgQueued=false;
+  const W=BW,H=BH,y=reduce.matches?0:scrollY,wide=W>=880,dark=matchMedia('(prefers-color-scheme: dark)').matches&&root.dataset.theme!=='light'||root.dataset.theme==='dark';
+  const span=Math.max(1,root.scrollHeight-H);
+  // A layer is centred on screen when the reader is a fraction f of the way down the page,
+  // and moves at `rate` times the scroll speed.
+  const at=(f,rate)=>H/2-(y-f*span)*rate;
+  bx.setTransform(bdpr,0,0,bdpr,0,0);bx.clearRect(0,0,W,H);bx.globalAlpha=1;
+  // Layer 1: color washes, a tenth of the scroll speed.
+  glow(W*0.82,at(0,0.1)-H*0.2,Math.max(W,H)*0.55,tok('--glow-a'));
+  glow(W*0.12,at(0.5,0.1),Math.max(W,H)*0.5,tok('--glow-b'));
+  glow(W*0.88,at(1,0.1)+H*0.15,Math.max(W,H)*0.55,tok('--glow-c'));
+  // Layer 2: the Farey disk beside the title, leaving upward at 40% of the scroll speed.
+  const R=wide?Math.min(H*0.5,W*0.34):Math.min(W*0.62,H*0.38);
+  fareyDraw(bx,{ox:wide?W*0.74:W*0.5,oy:(wide?H*0.5:H*0.34)-y*0.4,R,shift:0.35+y/2400,rim:wide?0.55:0.4,lines:wide?0.4:0.26,color:tok('--text-accent')});
+  // Layer 3: drawings from the artifacts at 60% of the scroll speed, alternating sides.
+  const S=wide?Math.min(H*0.8,W*0.42):Math.min(W*0.95,H*0.6),fade=wide?1:0.6;
+  antennas(wide?W*0.12:W*0.5,at(0.3,0.6),S,tok('--amber'),0.42*fade);
+  penrose(wide?W*0.88:W*0.5,at(0.6,0.6),S,tok('--violet'),tok('--amber'),0.4*fade);
+  hexes(wide?W*0.12:W*0.5,at(0.92,0.6),S,0.35*fade,dark);
+  bx.globalAlpha=1;
+}
+function bgResize(){bdpr=Math.min(devicePixelRatio||1,2);BW=innerWidth;BH=innerHeight;bg.width=Math.round(BW*bdpr);bg.height=Math.round(BH*bdpr);paintBg();}
+const bgQueue=()=>{if(!bgQueued){bgQueued=true;requestAnimationFrame(paintBg);}};
+addEventListener('scroll',bgQueue,{passive:true});
+addEventListener('resize',bgResize);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',bgQueue);
+new MutationObserver(bgQueue).observe(root,{attributes:true,attributeFilter:['data-theme']});
+new ResizeObserver(bgQueue).observe(document.body);
+bgResize();
+
+/* Page transitions. Only one card at a time may carry the transition name, so name the one
+   being opened, or, coming back from a page, the one for that page. */
+function mark(card){
+  cards.forEach(c=>c.removeAttribute('data-vt-card'));
+  if(card)card.setAttribute('data-vt-card','');
+}
+const cardFor=url=>{try{const path=new URL(url,location.href).pathname;return cards.find(c=>new URL(c.querySelector('h2 a').href).pathname===path);}catch(e){return null;}};
+document.addEventListener('click',e=>{const a=e.target.closest('article a[href]:not([href^="#"])');if(a)mark(a.closest('article'));});
+addEventListener('pageshow',()=>mark(null));
+addEventListener('pagereveal',e=>{
+  if(!e.viewTransition)return;
+  const from=window.navigation&&navigation.activation&&navigation.activation.from;
+  const card=(from&&cardFor(from.url))||(hashCard&&cards.includes(hashCard)&&hashCard);
+  if(!card)return;
+  showThrough(cards.indexOf(card)+1);
+  mark(card);e.viewTransition.ready.catch(()=>{});e.viewTransition.finished.finally(()=>mark(null));
+});
 })();
 </script>
 </body>

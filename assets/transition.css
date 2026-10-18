@@ -1,0 +1,16 @@
+/* Animated move between the index and an artifact page (cross-document view transitions).
+   The clicked card grows and fades with the old page; the new page fades in only once the
+   old one is gone, so the two never overlap and nothing shifts. Browsers without view
+   transitions just navigate. */
+@view-transition{navigation:auto}
+@media (prefers-reduced-motion:reduce){@view-transition{navigation:none}}
+
+[data-vt-card]{view-transition-name:artifact-card}
+
+::view-transition-old(root){animation:.2s ease both vt-fade-out}
+::view-transition-new(root){animation:.28s ease .18s both vt-fade-in}
+::view-transition-old(artifact-card){animation:.3s cubic-bezier(.2,.7,.2,1) both vt-grow-out}
+::view-transition-new(artifact-card){animation:.28s ease .18s both vt-fade-in}
+@keyframes vt-fade-out{to{opacity:0}}
+@keyframes vt-fade-in{from{opacity:0}}
+@keyframes vt-grow-out{to{opacity:0;transform:scale(1.04)}}

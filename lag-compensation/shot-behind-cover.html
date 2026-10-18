@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Shot Behind Cover</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../assets/transition.css">
+<style>
+/* Layout: three synchronized "screens" (Alice, Server, Bob) over one shared wire timeline, controls above, verdicts below */
+:root{
+  --bg:#E8ECEF; --surface:#F7F9FA; --surface-2:#EEF2F4; --ink:#16212A; --muted:#5A6873; --line:#CBD3D9;
+  --alice:#7C4BD6; --bob:#0F7F92; --server:#A66F0B; --danger:#D23A2C; --ok:#2C8A55;
+  --floor:#F3F6F7; --grid:#E2E8EB; --pillar:#26313A; --hatch:#4A5660;
+  --f-display:"Chakra Petch","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F141A; --surface:#161D25; --surface-2:#1C252F; --ink:#E2E8ED; --muted:#8E9BA6; --line:#2C3743;
+    --alice:#B08BFF; --bob:#3CC3D6; --server:#E3AC40; --danger:#FF6A5C; --ok:#5ACB8B;
+    --floor:#121920; --grid:#1B242D; --pillar:#3B4754; --hatch:#596673; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F141A; --surface:#161D25; --surface-2:#1C252F; --ink:#E2E8ED; --muted:#8E9BA6; --line:#2C3743;
+  --alice:#B08BFF; --bob:#3CC3D6; --server:#E3AC40; --danger:#FF6A5C; --ok:#5ACB8B;
+  --floor:#121920; --grid:#1B242D; --pillar:#3B4754; --hatch:#596673; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0}
+.crumb{font-size:13px;color:var(--muted);text-decoration:none}
+.crumb:hover,.crumb:focus-visible{color:var(--ink);text-decoration:underline}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1320px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+.eyebrow{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,4.2vw,46px);line-height:1.02;letter-spacing:-.01em;margin:4px 0 8px;text-wrap:balance}
+h1 .cut{color:var(--danger)}
+.lede{max-width:70ch;margin:0;color:var(--muted)}
+.lede b{color:var(--ink);font-weight:600}
+h2,h3{font-family:var(--f-display);font-weight:600;margin:0;letter-spacing:.01em}
+h2{font-size:18px}
+h3{font-size:15px}
+
+/* controls */
+.controls{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:14px}
+.row{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface-2)}
+.seg button{appearance:none;border:0;background:transparent;color:var(--muted);padding:8px 14px;cursor:pointer;font:inherit;display:flex;flex-direction:column;align-items:flex-start;line-height:1.15;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button b{font-family:var(--f-display);font-size:16px;color:var(--ink);letter-spacing:.03em}
+.seg button span{font-size:11.5px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.seg button[aria-pressed="true"] b{color:var(--surface)}
+.field{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--muted);font-family:var(--f-mono);letter-spacing:.04em;text-transform:uppercase}
+select,input[type=range]{font:inherit}
+select{font-family:var(--f-body);text-transform:none;letter-spacing:0;font-size:14px;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:7px;padding:7px 10px;max-width:100%}
+.transport{display:flex;align-items:center;gap:8px;flex:1 1 360px;min-width:0}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:7px;height:36px;min-width:36px;padding:0 10px;cursor:pointer;font-family:var(--f-mono);font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn.primary{background:var(--ink);color:var(--surface);border-color:var(--ink);min-width:84px}
+.btn:hover{border-color:var(--muted)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--server);outline-offset:2px}
+#scrub{flex:1;min-width:80px;accent-color:var(--server)}
+.clock{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:14px;min-width:84px;text-align:right}
+.net{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 18px;border-top:1px dashed var(--line);padding-top:12px}
+.net label.field input[type=range]{width:100%}
+.net .val{color:var(--ink);font-variant-numeric:tabular-nums;text-transform:none}
+.dim{opacity:.4}
+.check{display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--ink);cursor:pointer}
+.check input{accent-color:var(--server);width:16px;height:16px}
+.scdesc{margin:0;color:var(--muted);font-size:14px;max-width:90ch}
+
+/* screens */
+.screens{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:900px){.screens{grid-template-columns:minmax(0,1fr)}}
+.screen{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.screen-head{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--line)}
+.screen-head .meta{margin-left:auto;font-family:var(--f-mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.dot.A{background:var(--alice)} .dot.B{background:var(--bob)} .dot.S{background:var(--server);border-radius:2px}
+.stage{position:relative;line-height:0}
+.stage canvas{display:block;width:100%}
+.feed{position:absolute;left:8px;top:8px;right:8px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;line-height:1.25;pointer-events:none}
+.chip{font-family:var(--f-mono);font-size:11.5px;padding:3px 7px;border-radius:5px;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--muted);max-width:100%;animation:pop .18s ease-out}
+.chip.t-A{border-left-color:var(--alice)} .chip.t-B{border-left-color:var(--bob)} .chip.t-S{border-left-color:var(--server)}
+.chip.t-danger{border-left-color:var(--danger);color:var(--danger);font-weight:700}
+.chip.t-ok{border-left-color:var(--ok);color:var(--ok);font-weight:700}
+.chip.t-muted{color:var(--muted)}
+@keyframes pop{from{transform:translateY(-3px);opacity:.3}to{transform:none;opacity:1}}
+.screen-note{margin:0;padding:8px 12px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+
+/* timeline */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+.card-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;margin-bottom:10px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-family:var(--f-mono);font-size:11.5px;color:var(--muted)}
+.legend i{display:inline-block;width:18px;height:0;border-top:2px solid var(--muted);vertical-align:middle;margin-right:5px}
+.legend i.F{border-color:var(--ink)} .legend i.H{border-color:var(--server)} .legend i.Hp{border-top-style:dashed;border-color:var(--server)} .legend i.L{border-color:var(--line)}
+.legend i.band{height:8px;border:0;background:var(--danger);opacity:.25}
+.tl-scroll{overflow-x:auto;line-height:0}
+#tl{display:block;cursor:crosshair}
+
+/* lower */
+.lower{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px}
+@media (max-width:900px){.lower{grid-template-columns:minmax(0,1fr)}}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:13.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.shot{font-weight:600;white-space:nowrap}
+td.shot small{display:block;font-weight:400;color:var(--muted);font-family:var(--f-mono);font-size:11.5px}
+th.cur,td.cur{background:var(--surface-2)}
+th.cur{color:var(--ink)}
+.res{font-weight:600}
+.res.danger{color:var(--danger)} .res.ok{color:var(--ok)} .res.warn{color:var(--server)}
+td small.sub{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.how p{margin:6px 0 0;max-width:68ch}
+.how .tag{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+ol.log{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:2px;max-height:340px;overflow:auto;border-top:1px solid var(--line);padding-top:8px}
+ol.log li{display:grid;grid-template-columns:62px 12px minmax(0,1fr);gap:6px;align-items:baseline;font-size:13px;padding:4px 6px;border-radius:5px;cursor:pointer;opacity:.38;transition:opacity .2s}
+ol.log li.past{opacity:1}
+ol.log li.now{background:var(--surface-2)}
+ol.log li:hover{background:var(--surface-2)}
+ol.log time{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+ol.log .d{width:8px;height:8px;border-radius:50%;align-self:center}
+.d.A{background:var(--alice)} .d.B{background:var(--bob)} .d.S{background:var(--server);border-radius:2px}
+footer{color:var(--muted);font-size:13px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;border-top:1px solid var(--line);padding-top:14px}
+footer p{margin:0;max-width:72ch}
+footer b{color:var(--ink);font-weight:600}
+.stat{font-family:var(--f-display);font-size:26px;color:var(--ink);font-weight:700;display:block;line-height:1.1}
+@media (prefers-reduced-motion: reduce){.chip{animation:none} ol.log li{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="crumb" href="../index.html#shot-behind-cover">&larr; All artifacts</a>
+    <p class="eyebrow">Lee &amp; Chang · MMSys ’18 · Advanced Lag Compensation</p>
+    <h1>Shot behind <span class="cut">cover</span></h1>
+    <p class="lede">Three screens of the same firefight, each showing the world as that machine knows it. <b>Alice</b> has a 250ms ping, <b>Bob</b> has 50ms. Watch how traditional lag compensation (TLC), ping‑limited compensation (CLC) and the paper's advanced lag compensation (ALC) decide who gets hit when both players shoot.</p>
+  </header>
+
+  <section class="controls" aria-label="Simulation controls">
+    <div class="row">
+      <div class="seg" id="alg" role="group" aria-label="Algorithm">
+        <button type="button" data-alg="TLC" aria-pressed="true"><b>TLC</b><span>Traditional</span></button>
+        <button type="button" data-alg="CLC" aria-pressed="false"><b>CLC</b><span>Ping‑limited</span></button>
+        <button type="button" data-alg="ALC" aria-pressed="false"><b>ALC</b><span>Advanced (paper)</span></button>
+      </div>
+      <label class="field" for="scenario">Scenario
+        <select id="scenario"></select>
+      </label>
+      <label class="field" for="speed">Speed
+        <select id="speed">
+          <option value="0.04">0.04×</option>
+          <option value="0.1" selected>0.1×</option>
+          <option value="0.25">0.25×</option>
+          <option value="0.5">0.5×</option>
+          <option value="1">1× (real time)</option>
+        </select>
+      </label>
+    </div>
+    <div class="row">
+      <div class="transport">
+        <button class="btn" id="prev" type="button" title="Previous event" aria-label="Previous event">◀︎</button>
+        <button class="btn primary" id="play" type="button">Pause</button>
+        <button class="btn" id="next" type="button" title="Next event" aria-label="Next event">▶︎</button>
+        <input type="range" id="scrub" min="0" max="500" step="1" value="0" aria-label="Simulation time">
+        <span class="clock" id="clock">t = 0 ms</span>
+      </div>
+    </div>
+    <div class="net">
+      <label class="field" for="pingA">Alice ping <span class="val" id="vPingA"></span><input type="range" id="pingA" min="20" max="400" step="10" value="250"></label>
+      <label class="field" for="pingB">Bob ping <span class="val" id="vPingB"></span><input type="range" id="pingB" min="10" max="200" step="10" value="50"></label>
+      <label class="field" id="fClc" for="clc">CLC ping limit <span class="val" id="vClc"></span><input type="range" id="clc" min="50" max="400" step="10" value="200"></label>
+      <label class="field" id="fThr" for="thr">ALC appeal threshold <span class="val" id="vThr"></span><input type="range" id="thr" min="0" max="300" step="10" value="50"></label>
+      <div style="display:flex;flex-direction:column;gap:6px;justify-content:center">
+        <label class="check" for="showTrue"><input type="checkbox" id="showTrue" checked> Show true positions</label>
+        <label class="check" id="fCheat" for="cheat"><input type="checkbox" id="cheat"> Bob's client denies every hit</label>
+      </div>
+    </div>
+  </section>
+
+  <p class="scdesc" id="scdesc"></p>
+
+  <section class="screens">
+    <article class="screen" data-role="A">
+      <header class="screen-head"><span class="dot A"></span><h3>Alice's screen</h3><span class="meta" id="metaA"></span></header>
+      <div class="stage"><canvas></canvas><div class="feed"></div></div>
+      <p class="screen-note" id="noteA"></p>
+    </article>
+    <article class="screen" data-role="S">
+      <header class="screen-head"><span class="dot S"></span><h3>Server</h3><span class="meta">authoritative</span></header>
+      <div class="stage"><canvas></canvas><div class="feed"></div></div>
+      <p class="screen-note" id="noteS"></p>
+    </article>
+    <article class="screen" data-role="B">
+      <header class="screen-head"><span class="dot B"></span><h3>Bob's screen</h3><span class="meta" id="metaB"></span></header>
+      <div class="stage"><canvas></canvas><div class="feed"></div></div>
+      <p class="screen-note" id="noteB"></p>
+    </article>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>On the wire</h2>
+      <div class="legend">
+        <span><i class="L"></i>L position update</span>
+        <span><i class="F"></i>F fire</span>
+        <span><i class="H"></i>H hit</span>
+        <span><i class="Hp"></i>provisional hit</span>
+        <span><i style="border-color:var(--bob)"></i>C / D confirm · deny</span>
+        <span><i class="band"></i>age of the position the hit used</span>
+      </div>
+    </div>
+    <div class="tl-scroll"><canvas id="tl" aria-label="Message timeline. Click to jump to a time."></canvas></div>
+  </section>
+
+  <section class="lower">
+    <div class="card">
+      <div class="card-head"><h2>Outcome of each shot</h2><span class="legend">same scenario, all three algorithms</span></div>
+      <div class="tbl-wrap"><table id="outTbl"></table></div>
+    </div>
+    <div class="card how">
+      <span class="tag" id="howTag"></span>
+      <h2 id="howTitle"></h2>
+      <p id="howText"></p>
+      <ol class="log" id="log"></ol>
+    </div>
+  </section>
+
+  <footer>
+    <p><span class="stat">85 → 5</span>Shots behind cover received by low‑ping players in the authors' 12‑player study, TLC vs ALC (−94.1%). Hit accuracy (p = .158) and perceived responsiveness (p = .317) showed no significant change.</p>
+    <p><b>Simplifications.</b> One‑way delay is half the ping, with no interpolation or dead reckoning, matching the paper's diagrams. Line of sight is traced between player centres; the paper traces from the hit body part, using the impact offset carried in the hit event.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+const MAP={w:680,h:400}, R=14;
+const PILLARS=[{x:430,y:60,w:40,h:110},{x:200,y:260,w:40,h:100}];
+const SCEN={
+  duel:{label:"Duel · Bob fires, then ducks",
+    desc:"Bob fires at Alice, then slides behind the pillar. Alice fires back at the Bob drawn on her screen, a Bob who has already left.",
+    A:[[0,150,200]], B:[[100,540,260],[350,540,90]], shots:[["B",60],["A",230]]},
+  both:{label:"Trade · both fire, both duck",
+    desc:"Each player fires once and dives for cover. Both shots are on target on the shooter's screen. Lag decides who gets shot behind cover, and ALC only protects the low‑ping player.",
+    A:[[150,150,200],[300,150,330]], B:[[100,540,260],[350,540,90]], shots:[["A",150],["B",180]]},
+  strafe:{label:"Open ground · Bob strafes",
+    desc:"Bob strafes sideways in the open and never reaches cover, so every hit is legitimate. This is where CLC hurts Alice and ALC costs a few extra milliseconds.",
+    A:[[0,150,200]], B:[[50,540,320],[267,540,190]], shots:[["B",120],["A",200]]}
+};
+const NAME={A:"Alice",B:"Bob",S:"Server"}, OTHER={A:"B",B:"A"};
+const ALGS=["TLC","CLC","ALC"];
+const HOW={
+  TLC:{tag:"Traditional lag compensation",title:"The server rewinds to the shooter's view",
+    text:"The server keeps a history of every player's position. When a fire event arrives it rolls the world back by the shooter's ping and checks the shot there, so a shot that was on target on the shooter's screen hits. The victim pays for it: the hit can arrive after they have already reached cover."},
+  CLC:{tag:"Conditional lag compensation",title:"Rewind only for shooters under a ping limit",
+    text:"Introduced after Battlefield 4. Shooters with a ping under the limit get the normal rewind. Shots from laggier players are checked against the present, so they have to lead a moving target by roughly their ping. Battlefield and Overwatch use 250ms; the limit starts at 200ms here so Alice is over it."},
+  ALC:{tag:"Advanced lag compensation · this paper",title:"Rewind for everyone, let low‑ping victims appeal",
+    text:"The server rewinds like TLC, but a hit on a victim under the appeal threshold is provisional. The victim's client re‑traces line of sight to the shooter from where it is now and confirms or denies. A denial is re‑checked by the server with the position sent alongside it, so a lying client is overruled. Confirmed hits reach the shooter one victim‑ping later."}
+};
+
+const cfg={alg:"TLC",scenario:"duel",pingA:250,pingB:50,clc:200,thr:50,cheat:false,showTrue:true};
+const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const st={t:0,playing:!reduce,speed:0.1,hold:0,dirty:true};
+let SIM={}, T0=0, T1=500, EVT=[];
+const C={};
+
+/* ---------- geometry ---------- */
+function pos(kf,t){
+  if(t<=kf[0][0]) return {x:kf[0][1],y:kf[0][2]};
+  for(let i=1;i<kf.length;i++){ if(t<=kf[i][0]){ const a=kf[i-1],b=kf[i],f=(t-a[0])/(b[0]-a[0]); return {x:a[1]+(b[1]-a[1])*f,y:a[2]+(b[2]-a[2])*f}; } }
+  const l=kf[kf.length-1]; return {x:l[1],y:l[2]};
+}
+function segRect(p,q,r){
+  let t0=0,t1=1; const dx=q.x-p.x, dy=q.y-p.y;
+  const P=[-dx,dx,-dy,dy], Q=[p.x-r.x, r.x+r.w-p.x, p.y-r.y, r.y+r.h-p.y];
+  for(let i=0;i<4;i++){
+    if(P[i]===0){ if(Q[i]<0) return null; }
+    else { const u=Q[i]/P[i]; if(P[i]<0){ if(u>t1) return null; if(u>t0) t0=u; } else { if(u<t0) return null; if(u<t1) t1=u; } }
+  }
+  return t0;
+}
+function blockAt(p,q){ let best=null; for(const r of PILLARS){ const u=segRect(p,q,r); if(u!==null&&(best===null||u<best)) best=u; } return best; }
+function lerp(p,q,u){ return {x:p.x+(q.x-p.x)*u,y:p.y+(q.y-p.y)*u}; }
+function rayHit(o,aim,c){
+  const dx=aim.x-o.x, dy=aim.y-o.y, L=Math.hypot(dx,dy)||1, ux=dx/L, uy=dy/L;
+  const fx=c.x-o.x, fy=c.y-o.y, along=fx*ux+fy*uy;
+  if(along<0) return null;
+  const perp=Math.abs(fx*uy-fy*ux); if(perp>R) return null;
+  const d=along-Math.sqrt(R*R-perp*perp), hp={x:o.x+ux*d,y:o.y+uy*d};
+  if(blockAt(o,hp)!==null) return null;
+  return hp;
+}
+function rayEnd(o,aim){
+  const dx=aim.x-o.x, dy=aim.y-o.y, L=Math.hypot(dx,dy)||1;
+  const far={x:o.x+dx/L*900,y:o.y+dy/L*900}; const u=blockAt(o,far);
+  return u===null?far:lerp(o,far,u);
+}
+
+/* ---------- simulation ---------- */
+function simulate(alg){
+  const sc=SCEN[cfg.scenario], ping={A:cfg.pingA,B:cfg.pingB}, ow={A:ping.A/2,B:ping.B/2};
+  const tp=(w,t)=>pos(sc[w],t);
+  const msgs=[],fx=[],log=[],marks=[],bands=[],out=[]; let id=0;
+  const T=(panel,t0,dur,text,tone)=>fx.push({id:id++,k:"text",panel,t0,t1:t0+dur,text,tone});
+  const F=o=>{o.id=id++; fx.push(o);};
+  sc.shots.forEach(([s,tF])=>{
+    const v=OTHER[s], Ns=NAME[s], Nv=NAME[v];
+    const age=ow[s]+ow[v], aimT=tF-age, aim=tp(v,aimT), o=tp(s,tF), tS=tF+ow[s];
+    msgs.push({from:v,to:"S",t0:aimT,t1:aimT+ow[v],k:"L",who:v},{from:"S",to:s,t0:aimT+ow[v],t1:tF,k:"L",who:v},{from:s,to:"S",t0:tF,t1:tS,k:"F",who:s});
+    marks.push({lane:s,t:tF,k:"fire",who:s});
+    F({k:"tracer",panel:s,t0:tF,t1:tF+170,o,aim,who:s});
+    T(s,tF,240,`Fires at ${Nv}, on target here`,s);
+    log.push({t:tF,who:s,text:`${Ns} fires at ${Nv} as drawn on screen, a position ${age}ms old.`});
+    const comp=alg!=="CLC"||ping[s]<=cfg.clc;
+    const cur=tp(v,tS-ow[v]), tgt=comp?aim:cur, hp=rayHit(o,aim,tgt), rw=comp?ping[s]:0;
+    const srvBase=comp?`Rewind ${rw}ms`:`${Ns} ${ping[s]}ms > ${cfg.clc}ms limit · no rewind`;
+    F({k:"srv",panel:"S",t0:tS,t1:tS+300,o,aim,tgt,comp,rw,hit:!!hp,s,v});
+    const res={shot:`${Ns} → ${Nv}`,tF};
+    if(!hp){
+      T("S",tS,300,`${srvBase} · MISS`,"muted");
+      log.push({t:tS,who:"S",text:comp?`Server rewinds ${rw}ms to ${Ns}'s view: miss.`:`Server: ${Ns}'s ping (${ping[s]}ms) is over the ${cfg.clc}ms limit, so it checks ${Nv}'s current position. Miss.`});
+      marks.push({lane:"S",t:tS,k:"miss"});
+      const tM=tS+ow[s];
+      T(s,tM,300,"No hit registered","muted");
+      log.push({t:tM,who:s,text:`${Ns} gets no hit marker, though the shot was on target on screen.`});
+      Object.assign(res,{res:"Miss",tone:"warn",sub:comp?"missed in the rewound world":`not compensated; ${Ns} had to lead ${Nv} by ~${ping[s]}ms`});
+    } else if(alg==="ALC" && ping[v]<=cfg.thr){
+      const tR=tS+ow[v], tC=tR+ow[v];
+      T("S",tS,Math.max(260,tC-tS),`${srvBase} · HIT · provisional, ask ${Nv}`,"S");
+      log.push({t:tS,who:"S",text:`Server rewinds ${rw}ms: hit. ${Nv}'s ping (${ping[v]}ms) is within the ${cfg.thr}ms threshold, so the hit goes out as provisional.`});
+      msgs.push({from:"S",to:v,t0:tS,t1:tR,k:"Hp",who:"S"});
+      const seen=tp(s,tR-age), vp=tp(v,tR), sbc=blockAt(vp,seen)!==null, deny=sbc||cfg.cheat;
+      bands.push({lane:v,a:aimT,b:tR,sbc:false});
+      F({k:"prov",panel:v,t0:tR,t1:tR+Math.max(220,tC-tR),s,v});
+      T(v,tR,320, sbc?`Provisional hit · ${Ns} can't see me → deny`:(cfg.cheat?"Provisional hit · in plain sight, denying anyway":`Provisional hit · ${Ns} can see me → confirm`), sbc?"ok":(cfg.cheat?"danger":v));
+      log.push({t:tR,who:v,text:`${Nv} gets a provisional hit and traces line of sight to ${Ns}: ${sbc?"blocked by the pillar":"clear"}. ${deny?"Denies":"Confirms"} it${cfg.cheat&&!sbc?" (cheating)":""}.`});
+      msgs.push({from:v,to:"S",t0:tR,t1:tC,k:deny?"D":"C",who:v});
+      if(!deny){
+        F({k:"dmg",panel:v,t0:tR,t1:tR+380,sbc:false,s,v});
+        marks.push({lane:v,t:tR,k:"dmg",sbc:false});
+        const tM=tC+ow[s];
+        msgs.push({from:"S",to:s,t0:tC,t1:tM,k:"H",who:"S"});
+        T("S",tC,280,`${Nv} confirms · forward hit to ${Ns}`,"S");
+        log.push({t:tC,who:"S",text:`Server receives the confirmation and forwards the hit to ${Ns}.`});
+        F({k:"marker",panel:s,t0:tM,t1:tM+380,s,v});
+        T(s,tM,320,`Hit marker · ${tM-tF}ms after firing`,s);
+        log.push({t:tM,who:s,text:`${Ns} sees the hit marker ${tM-tF}ms after firing, ${ping[v]}ms later than under TLC.`});
+        Object.assign(res,{res:"Hit · confirmed",tone:"",sub:`hit marker after ${tM-tF}ms (TLC: ${ping[s]}ms)`});
+      } else if(sbc){
+        marks.push({lane:v,t:tR,k:"deny"});
+        T("S",tC,320,"Appeal checks out · no line of sight · hit discarded","ok");
+        marks.push({lane:"S",t:tC,k:"discard"});
+        log.push({t:tC,who:"S",text:`Server re-runs the trace with the position ${Nv} sent along: still blocked. Hit discarded.`});
+        T(s,tC+ow[s],300,"No hit registered","muted");
+        log.push({t:tC+ow[s],who:s,text:`${Ns} never gets a hit marker for this shot.`});
+        Object.assign(res,{res:"Discarded",tone:"ok",sub:`${Nv} was behind cover; no shot behind cover`});
+      } else {
+        marks.push({lane:v,t:tR,k:"deny"});
+        const tV=tC+ow[v], tM=tC+ow[s];
+        T("S",tC,320,"Denial refuted · line of sight clear · hit is final","danger");
+        log.push({t:tC,who:"S",text:`Server re-runs the trace: line of sight was clear. Denial refuted, irrefutable hit sent to both.`});
+        msgs.push({from:"S",to:v,t0:tC,t1:tV,k:"Hx",who:"S"},{from:"S",to:s,t0:tC,t1:tM,k:"Hx",who:"S"});
+        F({k:"dmg",panel:v,t0:tV,t1:tV+380,sbc:false,s,v}); marks.push({lane:v,t:tV,k:"dmg",sbc:false});
+        T(v,tV,300,"Irrefutable hit","danger");
+        log.push({t:tV,who:v,text:`${Nv} takes the hit anyway.`});
+        F({k:"marker",panel:s,t0:tM,t1:tM+380,s,v}); T(s,tM,320,`Hit marker · ${tM-tF}ms after firing`,s);
+        log.push({t:tM,who:s,text:`${Ns} sees the hit marker ${tM-tF}ms after firing.`});
+        Object.assign(res,{res:"Hit · denial overruled",tone:"",sub:`${Nv}'s client lied and the server caught it`});
+      }
+    } else {
+      const tR=tS+ow[v], tM=tS+ow[s];
+      const seen=tp(s,tR-age), vp=tp(v,tR), sbc=blockAt(vp,seen)!==null, inel=alg==="ALC";
+      T("S",tS,300,`${srvBase} · HIT${inel?` · ${Nv} ${ping[v]}ms > ${cfg.thr}ms, no appeal`:""}`,"S");
+      log.push({t:tS,who:"S",text:`Server ${comp?`rewinds ${rw}ms to ${Ns}'s view`:"checks the present"}: hit.${inel?` ${Nv}'s ping (${ping[v]}ms) is above the ${cfg.thr}ms appeal threshold, so the hit is final.`:""}`});
+      msgs.push({from:"S",to:v,t0:tS,t1:tR,k:"H",who:"S"},{from:"S",to:s,t0:tS,t1:tM,k:"H",who:"S"});
+      bands.push({lane:v,a:aimT,b:tR,sbc});
+      F({k:"dmg",panel:v,t0:tR,t1:tR+380,sbc,s,v}); marks.push({lane:v,t:tR,k:"dmg",sbc});
+      T(v,tR,340,sbc?"Hit behind cover!":"Hit taken",sbc?"danger":v);
+      log.push({t:tR,who:v,text:sbc?`${Nv} takes the hit behind cover. It was decided using where ${Nv} stood ${tR-aimT}ms earlier.`:`${Nv} takes the hit while still in the open.`});
+      F({k:"marker",panel:s,t0:tM,t1:tM+380,s,v}); T(s,tM,320,`Hit marker · ${tM-tF}ms after firing`,s);
+      log.push({t:tM,who:s,text:`${Ns} sees the hit marker ${tM-tF}ms after firing.`});
+      Object.assign(res, sbc?{res:"Hit · shot behind cover",tone:"danger",sub:inel?`${Nv}'s ping is above the appeal threshold; this one comes from ${Nv}'s own lag`:`${Nv} was already behind the pillar when it landed`}:{res:"Hit",tone:"",sub:`hit marker after ${tM-tF}ms`});
+    }
+    out.push(res);
+  });
+  let lo=Infinity,hi=-Infinity;
+  msgs.forEach(m=>{lo=Math.min(lo,m.t0);hi=Math.max(hi,m.t1);});
+  fx.forEach(f=>{hi=Math.max(hi,f.t0+60);});
+  log.sort((a,b)=>a.t-b.t);
+  return {msgs,fx,log,marks,bands,out,ow,ping,sc,lo,hi};
+}
+
+function recompute(){
+  ALGS.forEach(a=>SIM[a]=simulate(a));
+  let lo=Infinity,hi=-Infinity; ALGS.forEach(a=>{lo=Math.min(lo,SIM[a].lo);hi=Math.max(hi,SIM[a].hi);});
+  T0=Math.floor((Math.min(lo,0)-20)/50)*50; T1=Math.ceil((hi+30)/50)*50;
+  scrub.min=T0; scrub.max=T1;
+  st.t=Math.min(Math.max(st.t,T0),T1);
+  buildEvents(); renderTexts(); renderTable(); renderLog(); st.dirty=true;
+}
+function buildEvents(){
+  const S=SIM[cfg.alg], set=new Set();
+  S.msgs.forEach(m=>{ if(m.k!=="L") set.add(Math.round(m.t1)); });
+  S.marks.forEach(m=>set.add(Math.round(m.t)));
+  EVT=[...set].sort((a,b)=>a-b);
+}
+
+/* ---------- colours ---------- */
+function readColors(){
+  const cs=getComputedStyle(document.documentElement);
+  ["bg","surface","surface-2","ink","muted","line","alice","bob","server","danger","ok","floor","grid","pillar","hatch"].forEach(k=>C[k]=cs.getPropertyValue("--"+k).trim()||"#888");
+  st.dirty=true;
+}
+function rgba(h,a){
+  h=(h||"#888").replace("#","");
+  if(h.length===3) h=h.split("").map(c=>c+c).join("");
+  const n=parseInt(h.slice(0,6),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;
+}
+const col=w=>w==="A"?C.alice:w==="B"?C.bob:C.server;
+
+/* ---------- panels ---------- */
+const $=s=>document.querySelector(s);
+const scrub=$("#scrub");
+const panels=[...document.querySelectorAll(".screen")].map(el=>{
+  const canvas=el.querySelector("canvas");
+  return {el,role:el.dataset.role,canvas,ctx:canvas.getContext("2d"),feed:el.querySelector(".feed"),stage:el.querySelector(".stage"),k:1,dpr:1,feedKey:null};
+});
+const tl={canvas:$("#tl"),wrap:document.querySelector(".tl-scroll"),w:800,h:210,dpr:1};
+tl.ctx=tl.canvas.getContext("2d");
+
+function sizeAll(){
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  panels.forEach(P=>{
+    const w=P.stage.clientWidth||300, h=w*MAP.h/MAP.w;
+    P.dpr=dpr; P.k=w/MAP.w;
+    P.canvas.width=Math.round(w*dpr); P.canvas.height=Math.round(h*dpr); P.canvas.style.height=h+"px";
+  });
+  const tw=Math.max(tl.wrap.clientWidth||600,660);
+  tl.w=tw; tl.dpr=dpr;
+  tl.canvas.width=Math.round(tw*dpr); tl.canvas.height=Math.round(tl.h*dpr);
+  tl.canvas.style.width=tw+"px"; tl.canvas.style.height=tl.h+"px";
+  st.dirty=true;
+}
+
+function views(role,t,S){
+  const tp=(w,tt)=>pos(S.sc[w],tt), ow=S.ow;
+  if(role==="A") return {A:tp("A",t),B:tp("B",t-ow.A-ow.B)};
+  if(role==="B") return {B:tp("B",t),A:tp("A",t-ow.A-ow.B)};
+  return {A:tp("A",t-ow.A),B:tp("B",t-ow.B)};
+}
+
+function drawX(ctx,p,s,lw,color){
+  ctx.strokeStyle=color; ctx.lineWidth=lw; ctx.beginPath();
+  ctx.moveTo(p.x-s,p.y-s); ctx.lineTo(p.x+s,p.y+s); ctx.moveTo(p.x+s,p.y-s); ctx.lineTo(p.x-s,p.y+s); ctx.stroke();
+}
+function losLine(ctx,k,from,to,color,showX){
+  const u=blockAt(from,to);
+  ctx.setLineDash([6/k,4/k]); ctx.lineWidth=1.6/k;
+  if(u===null){ ctx.strokeStyle=color; ctx.beginPath(); ctx.moveTo(from.x,from.y); ctx.lineTo(to.x,to.y); ctx.stroke(); ctx.setLineDash([]); return false; }
+  const bp=lerp(from,to,u);
+  ctx.strokeStyle=color; ctx.beginPath(); ctx.moveTo(from.x,from.y); ctx.lineTo(bp.x,bp.y); ctx.stroke();
+  ctx.strokeStyle=rgba(color,.25); ctx.beginPath(); ctx.moveTo(bp.x,bp.y); ctx.lineTo(to.x,to.y); ctx.stroke();
+  ctx.setLineDash([]);
+  if(showX) drawX(ctx,bp,7,2.6/k,color);
+  return true;
+}
+function label(ctx,k,text,x,y,color,opts){
+  opts=opts||{};
+  ctx.font=`${opts.bold?700:500} ${(opts.size||11)/k}px ${opts.display?"'Chakra Petch'":"'JetBrains Mono'"},ui-monospace,monospace`;
+  ctx.fillStyle=color; ctx.textAlign=opts.align||"center"; ctx.textBaseline="middle"; ctx.fillText(text,x,y);
+}
+
+function drawPlayer(ctx,k,who,p,face,isSelf){
+  const c=col(who), ang=Math.atan2(face.y-p.y,face.x-p.x);
+  ctx.strokeStyle=c; ctx.lineWidth=5; ctx.lineCap="round";
+  ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x+Math.cos(ang)*(R+11),p.y+Math.sin(ang)*(R+11)); ctx.stroke();
+  if(isSelf){ ctx.strokeStyle=rgba(c,.45); ctx.lineWidth=1.5/k; ctx.beginPath(); ctx.arc(p.x,p.y,R+6,0,Math.PI*2); ctx.stroke(); }
+  ctx.fillStyle=c; ctx.beginPath(); ctx.arc(p.x,p.y,R,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle=C.floor; ctx.lineWidth=2/k; ctx.stroke();
+  label(ctx,k,who,p.x,p.y+.5,C.floor,{bold:true,display:true,size:14*k});
+  label(ctx,k,NAME[who]+(isSelf?" (you)":""),p.x,p.y+R+8+7/k,C.ink,{size:11});
+}
+
+function drawPanel(P,t,S){
+  const {ctx,k,role}=P;
+  ctx.setTransform(P.dpr*k,0,0,P.dpr*k,0,0);
+  ctx.fillStyle=C.floor; ctx.fillRect(0,0,MAP.w,MAP.h);
+  ctx.strokeStyle=C.grid; ctx.lineWidth=1/k; ctx.beginPath();
+  for(let x=40;x<MAP.w;x+=40){ctx.moveTo(x,0);ctx.lineTo(x,MAP.h);} for(let y=40;y<MAP.h;y+=40){ctx.moveTo(0,y);ctx.lineTo(MAP.w,y);} ctx.stroke();
+  PILLARS.forEach(r=>{
+    ctx.fillStyle=C.pillar; ctx.fillRect(r.x,r.y,r.w,r.h);
+    ctx.save(); ctx.beginPath(); ctx.rect(r.x,r.y,r.w,r.h); ctx.clip();
+    ctx.strokeStyle=C.hatch; ctx.lineWidth=1.2/k; ctx.beginPath();
+    for(let d=-r.h;d<r.w;d+=9){ctx.moveTo(r.x+d,r.y+r.h);ctx.lineTo(r.x+d+r.h,r.y);} ctx.stroke(); ctx.restore();
+  });
+  const v=views(role,t,S), tp=(w,tt)=>pos(S.sc[w],tt);
+  if(cfg.showTrue){
+    ["A","B"].forEach(w=>{
+      const tr=tp(w,t), seen=v[w];
+      if(Math.hypot(tr.x-seen.x,tr.y-seen.y)>1.5){
+        ctx.strokeStyle=rgba(col(w),.25); ctx.lineWidth=1/k; ctx.setLineDash([2/k,3/k]);
+        ctx.beginPath(); ctx.moveTo(seen.x,seen.y); ctx.lineTo(tr.x,tr.y); ctx.stroke();
+        ctx.strokeStyle=rgba(col(w),.7); ctx.lineWidth=1.5/k; ctx.setLineDash([4/k,3/k]);
+        ctx.beginPath(); ctx.arc(tr.x,tr.y,R,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+        label(ctx,k,"actual",tr.x+R+4,tr.y,rgba(col(w),.9),{align:"left",size:10});
+      }
+    });
+  }
+  S.fx.forEach(f=>{
+    if(f.panel!==role||f.k==="text"||t<f.t0||t>f.t1) return;
+    const u=(t-f.t0)/(f.t1-f.t0);
+    if(f.k==="tracer"){
+      const e=rayEnd(f.o,f.aim);
+      ctx.strokeStyle=rgba(col(f.who),1-u); ctx.lineWidth=2.5/k; ctx.beginPath(); ctx.moveTo(f.o.x,f.o.y); ctx.lineTo(e.x,e.y); ctx.stroke();
+      ctx.fillStyle=rgba(C.server,(1-u)*.9); ctx.beginPath(); ctx.arc(f.o.x+(f.aim.x-f.o.x)*0.06,f.o.y+(f.aim.y-f.o.y)*0.06,(6+8*u),0,Math.PI*2); ctx.fill();
+    } else if(f.k==="marker"){
+      const tg=v[f.v], sc=1+.5*(1-Math.min(1,u*4)), a=1-Math.max(0,u-.6)/.4;
+      ctx.strokeStyle=rgba(C.ink,a); ctx.lineWidth=3/k;
+      for(let i=0;i<4;i++){ const an=Math.PI/4+i*Math.PI/2, r1=(R+5)*sc, r2=(R+14)*sc;
+        ctx.beginPath(); ctx.moveTo(tg.x+Math.cos(an)*r1,tg.y+Math.sin(an)*r1); ctx.lineTo(tg.x+Math.cos(an)*r2,tg.y+Math.sin(an)*r2); ctx.stroke(); }
+    } else if(f.k==="srv"){
+      const e=rayEnd(f.o,f.aim);
+      ctx.strokeStyle=rgba(col(f.s),.85); ctx.lineWidth=2/k; ctx.beginPath(); ctx.moveTo(f.o.x,f.o.y); ctx.lineTo(e.x,e.y); ctx.stroke();
+      const now=v[f.v];
+      ctx.strokeStyle=col(f.v); ctx.lineWidth=2/k; ctx.setLineDash([5/k,3/k]);
+      ctx.beginPath(); ctx.arc(f.tgt.x,f.tgt.y,R,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle=rgba(col(f.v),.12); ctx.fill();
+      if(f.comp && Math.hypot(now.x-f.tgt.x,now.y-f.tgt.y)>R){
+        const mx=(now.x+f.tgt.x)/2+40, my=(now.y+f.tgt.y)/2;
+        ctx.strokeStyle=C.server; ctx.lineWidth=1.6/k; ctx.beginPath(); ctx.moveTo(now.x+R,now.y); ctx.quadraticCurveTo(mx,my,f.tgt.x+R,f.tgt.y); ctx.stroke();
+        const a=Math.atan2(f.tgt.y-my,f.tgt.x+R-mx);
+        ctx.fillStyle=C.server; ctx.beginPath(); ctx.moveTo(f.tgt.x+R,f.tgt.y);
+        ctx.lineTo(f.tgt.x+R-Math.cos(a-.4)*9,f.tgt.y-Math.sin(a-.4)*9); ctx.lineTo(f.tgt.x+R-Math.cos(a+.4)*9,f.tgt.y-Math.sin(a+.4)*9); ctx.fill();
+        label(ctx,k,`−${f.rw}ms`,mx+4,my,C.server,{align:"left",bold:true});
+      }
+      label(ctx,k,f.comp?(f.rw?"rewound":"checked"):"now",f.tgt.x,f.tgt.y-R-9,col(f.v),{size:10});
+      label(ctx,k,f.hit?"HIT":"MISS",f.tgt.x-R-8,f.tgt.y,f.hit?C.danger:C.muted,{align:"right",bold:true,display:true,size:14});
+    } else if(f.k==="prov"){
+      const me=v[f.v], sh=v[f.s];
+      ctx.strokeStyle=C.server; ctx.lineWidth=2.4/k; ctx.setLineDash([4/k,4/k]); ctx.lineDashOffset=-t/8;
+      ctx.beginPath(); ctx.arc(me.x,me.y,R+9,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]); ctx.lineDashOffset=0;
+      losLine(ctx,k,me,sh,cfg.cheat&&blockAt(me,sh)===null?C.danger:C.ok,true);
+    } else if(f.k==="dmg"){
+      const me=v[f.v], sh=v[f.s], c=f.sbc?C.danger:C.danger;
+      ctx.strokeStyle=rgba(c,1-u); ctx.lineWidth=3/k; ctx.beginPath(); ctx.arc(me.x,me.y,R+4+u*26,0,Math.PI*2); ctx.stroke();
+      ctx.fillStyle=rgba(c,.35*(1-u)); ctx.beginPath(); ctx.arc(me.x,me.y,R+3,0,Math.PI*2); ctx.fill();
+      if(f.sbc) losLine(ctx,k,me,sh,C.danger,true);
+    }
+  });
+  drawPlayer(ctx,k,"A",v.A,v.B,role==="A");
+  drawPlayer(ctx,k,"B",v.B,v.A,role==="B");
+  // feed
+  const items=S.fx.filter(f=>f.k==="text"&&f.panel===role&&t>=f.t0&&t<=f.t1);
+  const key=cfg.alg+items.map(f=>f.id).join(",");
+  if(key!==P.feedKey){ P.feedKey=key; P.feed.innerHTML=items.map(f=>`<span class="chip t-${f.tone}">${f.text}</span>`).join(""); }
+}
+
+/* ---------- timeline ---------- */
+const LANE={A:44,S:104,B:164}, GUT=86;
+function tx(t){ return GUT+(t-T0)/(T1-T0)*(tl.w-GUT-18); }
+function drawTimeline(t,S){
+  const ctx=tl.ctx, W=tl.w, H=tl.h;
+  ctx.setTransform(tl.dpr,0,0,tl.dpr,0,0);
+  ctx.fillStyle=C.surface; ctx.fillRect(0,0,W,H);
+  ctx.font="500 10.5px 'JetBrains Mono',monospace"; ctx.textAlign="center"; ctx.textBaseline="middle";
+  for(let g=Math.ceil(T0/50)*50; g<=T1; g+=50){
+    const x=tx(g); ctx.strokeStyle=g===0?C.line:rgba(C.line,.55); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(x,22); ctx.lineTo(x,H-22); ctx.stroke();
+    ctx.fillStyle=C.muted; ctx.fillText(g+"",x,H-10);
+  }
+  ctx.textAlign="left"; ctx.fillStyle=C.muted; ctx.fillText("ms",W-16,H-10);
+  ["A","S","B"].forEach(l=>{
+    const y=LANE[l]; ctx.strokeStyle=rgba(col(l),.55); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(GUT-6,y); ctx.lineTo(W-14,y); ctx.stroke();
+    ctx.fillStyle=col(l); ctx.font="600 13px 'Chakra Petch',sans-serif"; ctx.textAlign="left";
+    ctx.fillText(NAME[l],10,y-7);
+    ctx.fillStyle=C.muted; ctx.font="500 10.5px 'JetBrains Mono',monospace";
+    ctx.fillText(l==="S"?"tick 60Hz":`ping ${S.ping[l]}`,10,y+8);
+  });
+  // bands
+  S.bands.forEach(b=>{
+    const y=LANE[b.lane], x0=tx(b.a), x1=tx(Math.min(t,b.b));
+    ctx.fillStyle=rgba(b.sbc?C.danger:C.muted,.08); ctx.fillRect(x0,y-9,tx(b.b)-x0,18);
+    if(t>b.a){ ctx.fillStyle=rgba(b.sbc?C.danger:C.muted,b.sbc?.26:.16); ctx.fillRect(x0,y-9,Math.max(0,x1-x0),18); }
+    if(t>=b.b){ ctx.fillStyle=b.sbc?C.danger:C.muted; ctx.font="600 10.5px 'JetBrains Mono',monospace"; ctx.textAlign="center";
+      const ly=b.lane==="B"?y+20:y-18; ctx.fillText(`${Math.round(b.b-b.a)}ms old`,(x0+tx(b.b))/2,ly); }
+  });
+  // messages
+  S.msgs.forEach(m=>{
+    if(m.t1<=m.t0) return;
+    const x0=tx(m.t0), y0=LANE[m.from], x1=tx(m.t1), y1=LANE[m.to];
+    const c=m.k==="L"?C.muted:m.k==="F"?col(m.who):(m.k==="C"||m.k==="D")?col(m.who):C.server;
+    const dashed=m.k==="Hp", width=m.k==="L"?1.1:m.k==="Hx"?2.6:1.8;
+    const u=Math.max(0,Math.min(1,(t-m.t0)/(m.t1-m.t0)));
+    ctx.lineWidth=width; ctx.setLineDash(dashed?[5,4]:m.k==="L"?[2,3]:[]);
+    ctx.strokeStyle=rgba(c,.16); ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke();
+    if(u>0){
+      const xe=x0+(x1-x0)*u, ye=y0+(y1-y0)*u;
+      ctx.strokeStyle=c; ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(xe,ye); ctx.stroke();
+      ctx.setLineDash([]);
+      const a=Math.atan2(ye-y0,xe-x0);
+      ctx.fillStyle=c; ctx.beginPath(); ctx.moveTo(xe,ye); ctx.lineTo(xe-Math.cos(a-.35)*7,ye-Math.sin(a-.35)*7); ctx.lineTo(xe-Math.cos(a+.35)*7,ye-Math.sin(a+.35)*7); ctx.fill();
+    }
+    ctx.setLineDash([]);
+    const lbl=m.k==="Hp"?"H?":m.k==="Hx"?"H!":m.k;
+    const mx=x0+(x1-x0)*.5, my=y0+(y1-y0)*.5;
+    ctx.font="700 10.5px 'JetBrains Mono',monospace"; ctx.textAlign="left";
+    ctx.fillStyle=rgba(c,u>.5?1:.3); ctx.fillText(lbl,mx+5,my-2);
+  });
+  // marks
+  S.marks.forEach(m=>{
+    const x=tx(m.t), y=LANE[m.lane], on=t>=m.t, a=on?1:.22;
+    if(m.k==="fire"){ ctx.fillStyle=rgba(col(m.who),a); ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2); ctx.fill(); }
+    else if(m.k==="dmg"){ const c=m.sbc?C.danger:C.ink; ctx.fillStyle=rgba(c,a); ctx.beginPath(); ctx.moveTo(x,y-7); ctx.lineTo(x+7,y); ctx.lineTo(x,y+7); ctx.lineTo(x-7,y); ctx.fill();
+      if(m.sbc){ ctx.font="700 10.5px 'JetBrains Mono',monospace"; ctx.textAlign="center"; ctx.fillStyle=rgba(C.danger,a); ctx.fillText("SBC",x,m.lane==="A"?y-16:y+17); } }
+    else if(m.k==="deny"){ ctx.strokeStyle=rgba(C.ok,a); ctx.lineWidth=2.4; ctx.strokeRect(x-5,y-5,10,10); }
+    else if(m.k==="discard"){ ctx.lineWidth=2.4; ctx.strokeStyle=rgba(C.ok,a); ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.stroke();
+      ctx.font="600 10.5px 'JetBrains Mono',monospace"; ctx.textAlign="center"; ctx.fillStyle=rgba(C.ok,a); ctx.fillText("discarded",x,y+17); }
+    else if(m.k==="miss"){ ctx.lineWidth=2; ctx.strokeStyle=rgba(C.muted,a); ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2); ctx.stroke();
+      ctx.font="600 10.5px 'JetBrains Mono',monospace"; ctx.textAlign="center"; ctx.fillStyle=rgba(C.muted,a); ctx.fillText("miss",x,y+17); }
+  });
+  // cursor
+  const cx=tx(t); ctx.strokeStyle=C.ink; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(cx,16); ctx.lineTo(cx,H-22); ctx.stroke();
+  ctx.fillStyle=C.ink; ctx.beginPath(); ctx.moveTo(cx-5,10); ctx.lineTo(cx+5,10); ctx.lineTo(cx,17); ctx.fill();
+}
+
+/* ---------- DOM text ---------- */
+function renderTexts(){
+  const S=SIM[cfg.alg], ow=S.ow, d=ow.A+ow.B;
+  $("#metaA").textContent=`ping ${cfg.pingA}ms`; $("#metaB").textContent=`ping ${cfg.pingB}ms`;
+  $("#noteA").textContent=`Draws Bob ${d}ms in the past (Bob→server ${ow.B}ms + server→Alice ${ow.A}ms).`;
+  $("#noteB").textContent=`Draws Alice ${d}ms in the past (Alice→server ${ow.A}ms + server→Bob ${ow.B}ms).`;
+  $("#noteS").textContent=`Knows Alice ${ow.A}ms late and Bob ${ow.B}ms late. Keeps history so it can rewind.`;
+  $("#vPingA").textContent=cfg.pingA+"ms"; $("#vPingB").textContent=cfg.pingB+"ms";
+  $("#vClc").textContent=cfg.clc+"ms"; $("#vThr").textContent=cfg.thr+"ms";
+  $("#fClc").classList.toggle("dim",cfg.alg!=="CLC");
+  $("#fThr").classList.toggle("dim",cfg.alg!=="ALC");
+  $("#fCheat").classList.toggle("dim",cfg.alg!=="ALC");
+  $("#scdesc").textContent=SCEN[cfg.scenario].desc;
+  const h=HOW[cfg.alg]; $("#howTag").textContent=h.tag; $("#howTitle").textContent=h.title; $("#howText").textContent=h.text;
+  document.querySelectorAll("#alg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.alg===cfg.alg?"true":"false"));
+}
+function renderTable(){
+  const rows=SIM.TLC.out.map((r,i)=>{
+    const cells=ALGS.map(a=>{ const o=SIM[a].out[i];
+      return `<td class="${a===cfg.alg?"cur":""}"><span class="res ${o.tone}">${o.res}</span><small class="sub">${o.sub}</small></td>`; }).join("");
+    return `<tr><td class="shot">${r.shot}<small>fires at t = ${r.tF}ms</small></td>${cells}</tr>`;
+  }).join("");
+  $("#outTbl").innerHTML=`<thead><tr><th>Shot</th>${ALGS.map(a=>`<th class="${a===cfg.alg?"cur":""}">${a}</th>`).join("")}</tr></thead><tbody>${rows}</tbody>`;
+}
+let logEls=[];
+function renderLog(){
+  const S=SIM[cfg.alg], ol=$("#log");
+  ol.innerHTML=S.log.map(e=>`<li data-t="${e.t}"><time>${Math.round(e.t)}ms</time><span class="d ${e.who}"></span><span>${e.text}</span></li>`).join("");
+  logEls=[...ol.children]; updateLog(true);
+}
+let lastLogIdx=-2;
+function updateLog(force){
+  let idx=-1; logEls.forEach((li,i)=>{ if(+li.dataset.t<=st.t) idx=i; });
+  if(idx===lastLogIdx&&!force) return; lastLogIdx=idx;
+  logEls.forEach((li,i)=>{ li.classList.toggle("past",i<=idx); li.classList.toggle("now",i===idx); });
+}
+
+/* ---------- loop ---------- */
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(64,now-last); last=now;
+  if(st.playing){
+    if(st.t>=T1){ st.hold+=dt; if(st.hold>1600){ st.hold=0; st.t=T0; } }
+    else { st.t=Math.min(T1,st.t+dt*st.speed); }
+    st.dirty=true;
+  }
+  if(st.dirty){
+    const S=SIM[cfg.alg];
+    panels.forEach(P=>drawPanel(P,st.t,S));
+    drawTimeline(st.t,S);
+    scrub.value=st.t; $("#clock").textContent=`t = ${Math.round(st.t)} ms`;
+    updateLog(false);
+    st.dirty=false;
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- controls ---------- */
+const sel=$("#scenario");
+sel.innerHTML=Object.entries(SCEN).map(([k,s])=>`<option value="${k}">${s.label}</option>`).join("");
+document.querySelectorAll("#alg button").forEach(b=>b.addEventListener("click",()=>{ cfg.alg=b.dataset.alg; buildEvents(); renderTexts(); renderTable(); renderLog(); st.dirty=true; }));
+sel.addEventListener("change",()=>{ cfg.scenario=sel.value; st.t=T0; recompute(); st.t=T0; st.hold=0; });
+$("#speed").addEventListener("change",e=>{ st.speed=+e.target.value; });
+const playBtn=$("#play");
+function setPlaying(p){ st.playing=p; playBtn.textContent=p?"Pause":"Play"; if(p&&st.t>=T1){ st.t=T0; } st.hold=0; }
+playBtn.addEventListener("click",()=>setPlaying(!st.playing));
+scrub.addEventListener("input",()=>{ st.t=+scrub.value; st.hold=0; st.dirty=true; });
+$("#prev").addEventListener("click",()=>{ setPlaying(false); const p=EVT.filter(e=>e<st.t-0.5); st.t=p.length?p[p.length-1]:T0; st.dirty=true; });
+$("#next").addEventListener("click",()=>{ setPlaying(false); const n=EVT.find(e=>e>st.t+0.5); st.t=n!==undefined?n:T1; st.dirty=true; });
+[["pingA","pingA"],["pingB","pingB"],["clc","clc"],["thr","thr"]].forEach(([id,key])=>{
+  $("#"+id).addEventListener("input",e=>{ cfg[key]=+e.target.value; recompute(); });
+});
+$("#cheat").addEventListener("change",e=>{ cfg.cheat=e.target.checked; recompute(); });
+$("#showTrue").addEventListener("change",e=>{ cfg.showTrue=e.target.checked; st.dirty=true; });
+$("#log").addEventListener("click",e=>{ const li=e.target.closest("li"); if(!li) return; setPlaying(false); st.t=+li.dataset.t+0.01; st.dirty=true; });
+tl.canvas.addEventListener("click",e=>{ const r=tl.canvas.getBoundingClientRect(); const x=e.clientX-r.left; if(x<GUT) return;
+  st.t=Math.max(T0,Math.min(T1,T0+(x-GUT)/(tl.w-GUT-18)*(T1-T0))); setPlaying(false); st.dirty=true; });
+document.addEventListener("keydown",e=>{ if(e.code==="Space"&&e.target===document.body){ e.preventDefault(); setPlaying(!st.playing); } });
+
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",readColors);
+new MutationObserver(readColors).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+new ResizeObserver(sizeAll).observe(document.querySelector(".screens"));
+new ResizeObserver(sizeAll).observe(tl.wrap);
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{st.dirty=true;});
+
+readColors(); recompute(); sizeAll();
+st.t=reduce?T1:T0; setPlaying(!reduce);
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

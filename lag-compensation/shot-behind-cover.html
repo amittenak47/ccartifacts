@@ -270,8 +270,8 @@ const SCEN={
     desc:"Bob strafes sideways in the open and never reaches cover, so every hit is legitimate. This is where CLC hurts Alice and ALC costs a few extra milliseconds.",
     A:[[0,150,200]], B:[[50,540,320],[267,540,190]], shots:[["B",120],["A",200]]},
   run:{label:"Open run · Bob sprints, Alice sidesteps",
-    desc:"Bob runs across open ground the whole time and Alice sidesteps slowly. Nobody reaches cover, so this is the cleanest test of aiming: without compensation, Alice has to lead Bob by her full ping.",
-    A:[[0,150,215],[400,150,165]], B:[[0,540,360],[400,540,180]], shots:[["B",120],["A",200]]}
+    desc:"Bob runs across open ground the whole time and Alice sidesteps to the right. Nobody reaches cover, so this is the cleanest test of aiming: without compensation, Alice has to lead Bob by her full ping.",
+    A:[[-200,40,230],[400,280,230]], B:[[0,540,360],[400,540,180]], shots:[["B",120],["A",200]]}
 };
 const NAME={A:"Alice",B:"Bob",S:"Server"}, OTHER={A:"B",B:"A"};
 const TABS={
@@ -357,8 +357,8 @@ function simulate(alg){
       T(s,tF,240,`Fires at ${Nv}, on target here`,s);
       log.push({t:tF,who:s,text:`${Ns} fires at ${Nv} as drawn on screen, a position ${age}ms old.`});
     } else if(leading){
-      T(s,tF,240,leadPx>1?`Leads ${Nv} by ${leadMs}ms (${leadPx}px)`:`${Nv} looks still · aims straight at him`,s);
-      log.push({t:tF,who:s,text:leadPx>1?`${Ns} aims ${leadMs}ms of ${Nv}'s on-screen movement ahead of him (${leadPx}px).`:`${Nv} looks stationary on ${Ns}'s screen, so ${Ns} aims straight at him.`});
+      T(s,tF,240,leadPx>1?`Leads ${Nv} by ${leadMs}ms (${leadPx}px)`:`${Nv} looks still · aims straight at ${Nv}`,s);
+      log.push({t:tF,who:s,text:leadPx>1?`${Ns} aims ${leadMs}ms of ${Nv}'s on-screen movement ahead of ${Nv} (${leadPx}px).`:`${Nv} looks stationary on ${Ns}'s screen, so ${Ns} aims straight at ${Nv}.`});
     } else {
       T(s,tF,240,`Fires straight at ${Nv}`,s);
       log.push({t:tF,who:s,text:`${Ns} fires straight at ${Nv} as drawn on screen, a position ${age}ms old.`});
@@ -378,7 +378,7 @@ function simulate(alg){
       T(s,tM,300,"No hit registered","muted");
       log.push({t:tM,who:s,text:`${Ns} gets no hit marker${leading?".":", though the shot was on target on screen."}`});
       const sub=!none?(comp?"missed in the rewound world":`not compensated; ${Ns} had to lead ${Nv} by ~${ping[s]}ms`)
-        :(leading?`${Nv} changed speed or direction after ${Ns} saw him, so the lead was wrong`:`aimed where ${Nv} was; needed ~${leadMs}ms of lead`);
+        :(leading?`${Nv} changed speed or direction after ${Ns} saw them, so the lead was wrong`:`aimed where ${Nv} was; needed ~${leadMs}ms of lead`);
       Object.assign(res,{res:"Miss",tone:"warn",sub});
     } else if(alg==="ALC" && ping[v]<=cfg.thr){
       const tR=tS+ow[v], tC=tR+ow[v];
@@ -592,9 +592,9 @@ function drawPanel(P,t,S){
           ctx.strokeStyle=col(f.v); ctx.lineWidth=2/k; ctx.setLineDash([5/k,3/k]);
           ctx.beginPath(); ctx.arc(g.x,g.y,R,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
           ctx.fillStyle=rgba(col(f.v),.15); ctx.fill();
-          const left=g.x>MAP.w*0.6, lx=left?g.x-R-8:g.x+R+8, al=left?"right":"left";
-          label(ctx,k,`rewinding ${NAME[f.v]} −${Math.round(ra*f.rw)}ms`,lx,g.y-7,C.server,{align:al,bold:true});
-          label(ctx,k,f.fixed?"fixed server rewind":`${NAME[f.s]}'s ping`,lx,g.y+8,C.server,{align:al,size:10});
+          const lx=Math.min(Math.max(g.x,80),MAP.w-80), ly=g.y<70?g.y+R+14:g.y-R-30;
+          label(ctx,k,`rewinding ${NAME[f.v]} −${Math.round(ra*f.rw)}ms`,lx,ly,C.server,{bold:true});
+          label(ctx,k,f.fixed?"fixed server rewind":`${NAME[f.s]}'s ping`,lx,ly+14,C.server,{size:10});
           return;
         }
       }
@@ -628,18 +628,19 @@ function drawPanel(P,t,S){
       if(f.sbc) losLine(ctx,k,me,sh,C.danger,true);
     }
   });
-  if(cfg.tab==="none" && role!=="S"){
+  const overLimit=cfg.tab==="comp"&&cfg.alg==="CLC"&&S.ping[role]>cfg.clc;
+  if((cfg.tab==="none"||overLimit) && role!=="S"){
     const opp=OTHER[role], seenT=t-S.ow.A-S.ow.B, vel=velAt(S.sc[opp],seenT);
-    const lead=Math.max(0,S.ping[role]-cfg.rewind), seen=v[opp];
+    const lead=overLimit?S.ping[role]:Math.max(0,S.ping[role]-cfg.rewind), seen=v[opp];
     const lp={x:seen.x+vel.x*lead,y:seen.y+vel.y*lead};
     if(Math.hypot(lp.x-seen.x,lp.y-seen.y)>2){
-      const a=cfg.alg==="NONE_L"?1:.5, c=rgba(C.ink,a);
+      const a=cfg.alg==="NONE_L"||overLimit?1:.5, c=rgba(C.ink,a);
       ctx.strokeStyle=rgba(C.ink,a*.5); ctx.lineWidth=1.2/k; ctx.setLineDash([3/k,3/k]);
       ctx.beginPath(); ctx.moveTo(seen.x,seen.y); ctx.lineTo(lp.x,lp.y); ctx.stroke();
       ctx.strokeStyle=c; ctx.lineWidth=1.6/k; ctx.setLineDash([4/k,3/k]);
       ctx.beginPath(); ctx.arc(lp.x,lp.y,R,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
       ctx.beginPath(); ctx.moveTo(lp.x-5,lp.y); ctx.lineTo(lp.x+5,lp.y); ctx.moveTo(lp.x,lp.y-5); ctx.lineTo(lp.x,lp.y+5); ctx.stroke();
-      label(ctx,k,`lead ${lead}ms`,lp.x+R+5,lp.y,c,{align:"left",size:10,bold:true});
+      label(ctx,k,overLimit?`needs lead ${lead}ms`:`lead ${lead}ms`,Math.min(Math.max(lp.x,50),MAP.w-50),lp.y-R-9,c,{size:10,bold:true});
     }
   }
   drawPlayer(ctx,k,"A",v.A,v.B,role==="A");

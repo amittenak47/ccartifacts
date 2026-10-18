@@ -9,37 +9,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&family=Public+Sans:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/widget.css">
+<link rel="stylesheet" href="assets/theme.css">
 <link rel="stylesheet" href="assets/transition.css">
+<!-- Hold the first paint until the page script has restored the scroll position and drawn the
+     background (the marker sits after the scripts); otherwise a slow script lets one wrong frame through. -->
+<link rel="expect" href="#page-ready" blocking="render">
 <style>
 /* An index of artifacts. To add one, copy an <article> below: give it an id, a title,
    a description and a link. The strip at the top is built from the articles.
    Behind the page a fixed Farey tessellation drifts slower than the cards; the strip of
    titles scrolls sideways, snaps and sticks; cards fade in, reveal their key results as
    they pass through the screen, and load in batches as the end of the list comes up. */
-/* Theme: the routing lab's slate ground with teal for links and the current item, amber and
-   violet for the drawings behind the page. These override assets/widget.css. */
-:root{
-  --surface-0:#F2F5F8; --surface-1:#E6EBF1; --surface-2:#FFFFFF;
-  --text-primary:#152033; --text-secondary:#4F5B6E; --text-muted:#7D8797;
-  --border:rgba(21,32,51,.12); --border-strong:rgba(21,32,51,.22); --border-stronger:rgba(21,32,51,.4);
-  --text-accent:#0A7C70; --border-accent:#5FB8AE; --bg-accent:#D7EFEC;
-  --amber:#B5620A; --violet:#5B4FC4;
-  --glow-a:rgba(10,124,112,.20); --glow-b:rgba(217,134,15,.16); --glow-c:rgba(91,79,196,.16);
-}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --surface-0:#0E131A; --surface-1:#141B25; --surface-2:#18212D;
-  --text-primary:#E5EAF1; --text-secondary:#A3AEBF; --text-muted:#7A8596;
-  --border:rgba(229,234,241,.10); --border-strong:rgba(229,234,241,.2); --border-stronger:rgba(229,234,241,.38);
-  --text-accent:#3CC4B4; --border-accent:#2A8F84; --bg-accent:#12302D;
-  --amber:#E9A24A; --violet:#9C95F0;
-  --glow-a:rgba(60,196,180,.16); --glow-b:rgba(233,162,74,.11); --glow-c:rgba(156,149,240,.13); color-scheme:dark}}
-:root[data-theme="dark"]{
-  --surface-0:#0E131A; --surface-1:#141B25; --surface-2:#18212D;
-  --text-primary:#E5EAF1; --text-secondary:#A3AEBF; --text-muted:#7A8596;
-  --border:rgba(229,234,241,.10); --border-strong:rgba(229,234,241,.2); --border-stronger:rgba(229,234,241,.38);
-  --text-accent:#3CC4B4; --border-accent:#2A8F84; --bg-accent:#12302D;
-  --amber:#E9A24A; --violet:#9C95F0;
-  --glow-a:rgba(60,196,180,.16); --glow-b:rgba(233,162,74,.11); --glow-c:rgba(156,149,240,.13); color-scheme:dark}
 :root{--gutter-l:max(16px,env(safe-area-inset-left,0px));--gutter-r:max(16px,env(safe-area-inset-right,0px))}
 html{scroll-padding-top:calc(50px + env(safe-area-inset-top,0px) + 16px)}
 body{padding:0;overflow-x:clip}
@@ -505,6 +485,7 @@ html.js .results li.on{opacity:1;transform:none}
 <div class="loader" id="loader" role="status" aria-label="Loading more artifacts"><i></i></div>
 </main>
 <script src="assets/farey-bg.js"></script>
+<script src="assets/backdrop.js"></script>
 <script>
 (function(){
 const root=document.documentElement,reduce=matchMedia('(prefers-reduced-motion: reduce)');
@@ -546,6 +527,27 @@ function showThrough(n){
   try{history.replaceState(Object.assign({},history.state,{shown}),'');}catch(e){}
 }
 showThrough(shown);
+
+/* Coming back to the page. The browser would put the scroll position back only after the
+   first frame, so the background would be drawn at the top and then jump. Instead the page
+   saves where you were (and which context sections were open) as you leave, and puts it
+   back itself before anything is drawn. */
+if('scrollRestoration' in history)history.scrollRestoration='manual';
+const sections=[...document.querySelectorAll('.context details')];
+function saveView(){
+  try{history.replaceState(Object.assign({},history.state,{shown,y:Math.round(scrollY),open:sections.map(d=>d.open?1:0).join('')}),'');}catch(e){}
+}
+let saveTimer=0;
+addEventListener('scroll',()=>{clearTimeout(saveTimer);saveTimer=setTimeout(saveView,150);},{passive:true});
+addEventListener('pagehide',saveView);
+sections.forEach(d=>d.addEventListener('toggle',saveView));
+const navType=(performance.getEntriesByType('navigation')[0]||{}).type;
+const saved=history.state||{};
+if((navType==='back_forward'||navType==='reload')&&typeof saved.y==='number'){
+  if(typeof saved.open==='string')sections.forEach((d,i)=>{if(saved.open[i])d.open=saved.open[i]==='1';});
+  scrollTo(0,saved.y);
+}else if(hashCard&&cards.includes(hashCard))hashCard.scrollIntoView({block:'start'});
+
 let loading=false;
 function loadMore(){
   if(loading||shown>=cards.length)return;
@@ -607,83 +609,22 @@ addEventListener('resize',queue);
 root.classList.add('js');
 frame();
 
-/* Background: three layers on one fixed canvas, each moving at its own fraction of the
-   scroll speed. Slowest are three soft color washes; then the Farey disk, which starts
-   beside the title and scrolls away upward; then drawings from the artifacts, which pass
-   by further down: antenna hyperbolas, a Penrose diamond and the 7-color hexagons. */
-const bg=document.getElementById('bg'),bx=bg.getContext('2d');
-const tok=n=>getComputedStyle(root).getPropertyValue(n).trim();
-let BW=0,BH=0,bdpr=1,bgQueued=false;
-function line(f,n){bx.beginPath();for(let i=0;i<=n;i++){const[x,y]=f(i/n);i?bx.lineTo(x,y):bx.moveTo(x,y);}bx.stroke();}
-function glow(x,y,r,color){
-  const g=bx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,color);g.addColorStop(1,'rgba(0,0,0,0)');
-  bx.fillStyle=g;bx.fillRect(x-r,y-r,2*r,2*r);
-}
-// Peaks (solid) and nulls (dashed) of two antennas: hyperbolas with the antennas as foci.
-function antennas(cx,cy,S,color,alpha){
-  const d=S*0.2,lam=d*0.5;bx.strokeStyle=color;
-  for(let m=-3.5;m<=3.5;m+=0.5){
-    const a=m*lam/2,peak=Number.isInteger(m);bx.globalAlpha=alpha*(peak?1:0.55);bx.lineWidth=peak?1.4:1;bx.setLineDash(peak?[]:[4,5]);
-    if(a===0){line(u=>[cx,cy+(u-0.5)*S*1.4],2);continue;}
-    const b=Math.sqrt(d*d-a*a);line(u=>{const t=(u-0.5)*4.4;return[cx+a*Math.cosh(t),cy+b*Math.sinh(t)];},90);
-  }
-  bx.setLineDash([]);bx.globalAlpha=alpha;bx.fillStyle=color;
-  for(const x of[cx-d,cx+d]){bx.beginPath();bx.arc(x,cy,3.5,0,Math.PI*2);bx.fill();}
-}
-// The Penrose diamond: light rays and hyperbolas after the arctan squeeze.
-function penrose(cx,cy,S,color,accent,alpha){
-  const R=S*0.46,sq=u=>(2/Math.PI)*Math.atan(u),map=(x,t)=>[cx+(sq(t+x)-sq(t-x))/2*R,cy-(sq(t-x)+sq(t+x))/2*R];
-  bx.globalAlpha=alpha;bx.strokeStyle=color;bx.lineWidth=1.2;
-  bx.beginPath();bx.moveTo(cx,cy-R);bx.lineTo(cx+R,cy);bx.lineTo(cx,cy+R);bx.lineTo(cx-R,cy);bx.closePath();bx.stroke();
-  bx.lineWidth=1.1;
-  for(const q of[0.6,1.3,2.2])for(const s of[1,-1]){
-    line(u=>{const v=(u-0.5)*12;return map(q*Math.sinh(v),s*q*Math.cosh(v));},160);
-    line(u=>{const v=(u-0.5)*12;return map(s*q*Math.cosh(v),q*Math.sinh(v));},160);
-  }
-  bx.strokeStyle=accent;bx.setLineDash([5,5]);bx.lineWidth=1.3;
-  bx.beginPath();bx.moveTo(cx-R/2,cy-R/2);bx.lineTo(cx+R/2,cy+R/2);bx.moveTo(cx+R/2,cy-R/2);bx.lineTo(cx-R/2,cy+R/2);bx.stroke();bx.setLineDash([]);
-}
-// Hexagons colored (q + 3r) mod 7, so each tile's six neighbours all differ.
-function hexes(cx,cy,S,alpha,dark){
-  const s=S*0.085,reach=4.6,L=dark?42:62,C=dark?60:55;
-  for(let r=-6;r<=6;r++)for(let q=-6;q<=6;q++){
-    const dist=(Math.abs(q)+Math.abs(r)+Math.abs(q+r))/2;if(dist>reach)continue;
-    const x=cx+s*Math.sqrt(3)*(q+r/2),y=cy+s*1.5*r,k=((q+3*r)%7+7)%7;
-    bx.globalAlpha=alpha*(1-dist/(reach+1.5));
-    bx.fillStyle=`hsl(${(k*360/7+170)%360} ${C}% ${L}%)`;
-    bx.beginPath();for(let i=0;i<6;i++){const a=Math.PI/6+i*Math.PI/3,px=x+s*0.94*Math.cos(a),py=y+s*0.94*Math.sin(a);i?bx.lineTo(px,py):bx.moveTo(px,py);}bx.closePath();bx.fill();
-  }
-}
-function paintBg(){
-  bgQueued=false;
-  const W=BW,H=BH,y=reduce.matches?0:scrollY,wide=W>=880,dark=matchMedia('(prefers-color-scheme: dark)').matches&&root.dataset.theme!=='light'||root.dataset.theme==='dark';
-  const span=Math.max(1,root.scrollHeight-H);
-  // A layer is centred on screen when the reader is a fraction f of the way down the page,
-  // and moves at `rate` times the scroll speed.
-  const at=(f,rate)=>H/2-(y-f*span)*rate;
-  bx.setTransform(bdpr,0,0,bdpr,0,0);bx.clearRect(0,0,W,H);bx.globalAlpha=1;
-  // Layer 1: color washes, a tenth of the scroll speed.
-  glow(W*0.82,at(0,0.1)-H*0.2,Math.max(W,H)*0.55,tok('--glow-a'));
-  glow(W*0.12,at(0.5,0.1),Math.max(W,H)*0.5,tok('--glow-b'));
-  glow(W*0.88,at(1,0.1)+H*0.15,Math.max(W,H)*0.55,tok('--glow-c'));
-  // Layer 2: the Farey disk beside the title, leaving upward at 40% of the scroll speed.
+/* Background: three layers, each moving at its own fraction of the scroll speed. Slowest are
+   three soft color washes; then the Farey disk, which starts beside the title and scrolls away
+   upward; then drawings from the artifacts, which pass by further down. Fixed pixel spots keep
+   every layer in the same place for the same scroll position, however many cards have loaded. */
+const backdrop=Backdrop.start(({ctx:c,W,H,y,wide,dark,at,tok})=>{
+  const big=Math.max(W,H);
+  Backdrop.glow(c,W*0.82,at(0,0.1)-H*0.2,big*0.55,tok('--glow-a'));
+  Backdrop.glow(c,W*0.12,at(2600,0.1),big*0.5,tok('--glow-b'));
+  Backdrop.glow(c,W*0.88,at(5200,0.1),big*0.55,tok('--glow-c'));
   const R=wide?Math.min(H*0.5,W*0.34):Math.min(W*0.62,H*0.38);
-  fareyDraw(bx,{ox:wide?W*0.74:W*0.5,oy:(wide?H*0.5:H*0.34)-y*0.4,R,shift:0.35+y/2400,rim:wide?0.55:0.4,lines:wide?0.4:0.26,color:tok('--text-accent')});
-  // Layer 3: drawings from the artifacts at 60% of the scroll speed, alternating sides.
+  fareyDraw(c,{ox:wide?W*0.74:W*0.5,oy:(wide?H*0.5:H*0.34)-y*0.4,R,shift:0.35+y/2400,rim:wide?0.55:0.4,lines:wide?0.4:0.26,color:tok('--text-accent')});
   const S=wide?Math.min(H*0.8,W*0.42):Math.min(W*0.95,H*0.6),fade=wide?1:0.6;
-  antennas(wide?W*0.12:W*0.5,at(0.3,0.6),S,tok('--amber'),0.42*fade);
-  penrose(wide?W*0.88:W*0.5,at(0.6,0.6),S,tok('--violet'),tok('--amber'),0.4*fade);
-  hexes(wide?W*0.12:W*0.5,at(0.92,0.6),S,0.35*fade,dark);
-  bx.globalAlpha=1;
-}
-function bgResize(){bdpr=Math.min(devicePixelRatio||1,2);BW=innerWidth;BH=innerHeight;bg.width=Math.round(BW*bdpr);bg.height=Math.round(BH*bdpr);paintBg();}
-const bgQueue=()=>{if(!bgQueued){bgQueued=true;requestAnimationFrame(paintBg);}};
-addEventListener('scroll',bgQueue,{passive:true});
-addEventListener('resize',bgResize);
-matchMedia('(prefers-color-scheme: dark)').addEventListener('change',bgQueue);
-new MutationObserver(bgQueue).observe(root,{attributes:true,attributeFilter:['data-theme']});
-new ResizeObserver(bgQueue).observe(document.body);
-bgResize();
+  Backdrop.antennas(c,wide?W*0.12:W*0.5,at(1400,0.6),S,tok('--amber'),0.42*fade);
+  Backdrop.penrose(c,wide?W*0.88:W*0.5,at(3000,0.6),S,tok('--violet'),tok('--amber'),0.4*fade);
+  Backdrop.hexes(c,wide?W*0.12:W*0.5,at(4600,0.6),S,0.35*fade,dark);
+});
 
 /* Page transitions. Only one card at a time may carry the transition name, so name the one
    being opened, or, coming back from a page, the one for that page. */
@@ -695,6 +636,7 @@ const cardFor=url=>{try{const path=new URL(url,location.href).pathname;return ca
 document.addEventListener('click',e=>{const a=e.target.closest('article a[href]:not([href^="#"])');if(a)mark(a.closest('article'));});
 addEventListener('pageshow',()=>mark(null));
 addEventListener('pagereveal',e=>{
+  backdrop.draw();frame();
   if(!e.viewTransition)return;
   const from=window.navigation&&navigation.activation&&navigation.activation.from;
   const card=(from&&cardFor(from.url))||(hashCard&&cards.includes(hashCard)&&hashCard);
@@ -704,5 +646,6 @@ addEventListener('pagereveal',e=>{
 });
 })();
 </script>
+<div id="page-ready" hidden></div>
 </body>
 </html>

@@ -8,7 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&family=Public+Sans:wght@400;500&display=swap">
 <link rel="stylesheet" href="../assets/widget.css">
+<link rel="stylesheet" href="../assets/theme.css">
 <link rel="stylesheet" href="../assets/transition.css">
+<link rel="expect" href="#page-ready" blocking="render">
 <script src="../assets/embed.js"></script>
 </head>
 <body>
@@ -55,5 +57,8 @@ document.getElementById('sk').oninput=draw;document.getElementById('sw').oninput
 </div>
 <div class="notes"><p>Antennas: the foci are real towers, fixed in place, and the difference k is a physical path difference (time difference of arrival × c). Changing k changes the curve's shape.</p><p>Spacetime: the meaningful quantity is the interval s = √(t² − x²), the time on a clock moving from the origin to the event. The focal difference 2s holds on paper, but those foci are just points of the drawing. Changing s rescales the curve without changing its shape.</p></div>
 </main>
+<script src="../assets/backdrop.js"></script>
+<script>Backdrop.page('antennas');</script>
+<div id="page-ready" hidden></div>
 </body>
 </html>

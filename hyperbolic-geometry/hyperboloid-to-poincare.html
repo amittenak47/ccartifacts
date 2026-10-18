@@ -8,7 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&family=Public+Sans:wght@400;500&display=swap">
 <link rel="stylesheet" href="../assets/widget.css">
+<link rel="stylesheet" href="../assets/theme.css">
 <link rel="stylesheet" href="../assets/transition.css">
+<link rel="expect" href="#page-ready" blocking="render">
 <script src="../assets/embed.js"></script>
 </head>
 <body>
@@ -49,5 +51,9 @@ document.getElementById('sr').oninput=draw;draw();
 </div>
 <div class="notes"><p>The point at hyperbolic distance r lands at tanh(r/2), so the whole infinite curve fits inside the interval from −1 to 1. In 2D the same projection turns the hyperboloid t² − x² − y² = 1 into the Poincaré disk.</p></div>
 </main>
+<script src="../assets/farey-bg.js"></script>
+<script src="../assets/backdrop.js"></script>
+<script>Backdrop.page('disk');</script>
+<div id="page-ready" hidden></div>
 </body>
 </html>

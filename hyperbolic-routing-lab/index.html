@@ -8,24 +8,26 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <script src="../assets/embed.js"></script>
+<link rel="stylesheet" href="../assets/theme.css">
 <link rel="stylesheet" href="../assets/transition.css">
+<link rel="expect" href="#page-ready" blocking="render">
 <style>
-/* Layout: one long reading column of ~68ch with full-bleed instrument panels (canvas + readouts) set on a faintly ruled "lab bench" surface. */
+/* Layout: one long reading column of ~68ch with full-bleed instrument panels (canvas + readouts).
+   Colors come from the shared theme (assets/theme.css), and the page sits on the shared
+   background (assets/backdrop.js): color washes and the Farey disk drifting behind it. */
 :root{
-  --bg:#F3F5F8; --panel:#FFFFFF; --ink:#152033; --muted:#5B6678; --line:#D5DBE4; --soft:#E8ECF2;
-  --hyp:#0A7C70; --hyp-soft:#D7EFEC; --euc:#B5620A; --euc-soft:#F7E6D2; --tree:#7B8596; --bad:#C23A3A; --good:#1F7A3A;
+  --bg:var(--surface-0); --panel:var(--surface-2); --ink:var(--text-primary); --muted:var(--text-secondary); --line:#D5DBE4; --soft:var(--surface-1);
+  --hyp:var(--text-accent); --hyp-soft:var(--bg-accent); --euc:var(--amber); --euc-soft:#F7E6D2; --tree:#7B8596; --bad:#C23A3A; --good:#1F7A3A;
   --display:"Newsreader","Iowan Old Style","Palatino Linotype",Georgia,serif;
   --body:"Public Sans","Segoe UI",system-ui,-apple-system,sans-serif;
   --mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
   --tile-l:78; --tile-s:52;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0E131A; --panel:#151C26; --ink:#E5EAF1; --muted:#97A2B3; --line:#2A3443; --soft:#1C2531;
-  --hyp:#3CC4B4; --hyp-soft:#12302D; --euc:#E9A24A; --euc-soft:#33240F; --tree:#8792A4; --bad:#F27474; --good:#5CC27A;
+  --line:#26303D; --euc-soft:#33240F; --tree:#8792A4; --bad:#F27474; --good:#5CC27A;
   --tile-l:34; --tile-s:42; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0E131A; --panel:#151C26; --ink:#E5EAF1; --muted:#97A2B3; --line:#2A3443; --soft:#1C2531;
-  --hyp:#3CC4B4; --hyp-soft:#12302D; --euc:#E9A24A; --euc-soft:#33240F; --tree:#8792A4; --bad:#F27474; --good:#5CC27A;
+  --line:#26303D; --euc-soft:#33240F; --tree:#8792A4; --bad:#F27474; --good:#5CC27A;
   --tile-l:34; --tile-s:42; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.65;padding-inline:16px;padding-block:0 64px}
@@ -39,7 +41,7 @@ h2{font-family:var(--display);font-weight:400;font-size:clamp(28px,3.6vw,38px);l
 h3{font-family:var(--body);font-weight:600;font-size:17px;margin:28px 0 6px}
 p{margin:0 0 14px}
 .lede{font-size:18px;color:var(--muted);max-width:62ch}
-nav.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-16px;padding-inline:16px;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+nav.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);background:color-mix(in srgb,var(--bg) 84%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);margin-inline:-16px;padding-inline:16px;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
 nav.toc a{display:inline-block;padding:10px 12px;font-size:13px;color:var(--muted);text-decoration:none;border-bottom:2px solid transparent}
 nav.toc a:hover,nav.toc a:focus-visible{color:var(--ink);border-bottom-color:var(--hyp);outline:none}
 section{padding-block:48px 8px;border-bottom:1px solid var(--line);scroll-margin-top:48px}
@@ -702,5 +704,9 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redrawAll);
 new MutationObserver(redrawAll).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 redrawAll();setTimeout(runTrials,300);setTimeout(runSweep,600);
 </script>
+<script src="../assets/farey-bg.js"></script>
+<script src="../assets/backdrop.js"></script>
+<script>Backdrop.page('disk');</script>
+<div id="page-ready" hidden></div>
 </body>
 </html>

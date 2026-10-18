@@ -8,7 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&family=Public+Sans:wght@400;500&display=swap">
 <link rel="stylesheet" href="../assets/widget.css">
+<link rel="stylesheet" href="../assets/theme.css">
 <link rel="stylesheet" href="../assets/transition.css">
+<link rel="expect" href="#page-ready" blocking="render">
 <script src="../assets/embed.js"></script>
 </head>
 <body>
@@ -68,5 +70,8 @@ sl.oninput=draw;new ResizeObserver(()=>{setup();draw();}).observe(cv);matchMedia
 </div>
 <div class="notes"><p>Every stage of the slider is itself a valid squeeze, so light rays stay at 45° the whole way. The outline is where infinity sits at that stage: it starts far off the canvas and closes in until it is the Penrose diamond. The light-cone X shrinks so its ends become the midpoints of the diamond's edges. The hyperbolas curl inward and bunch up along the edges ℐ⁺ and ℐ⁻. Lines of constant t pinch to the side corners i⁰; lines of constant x pinch to the top and bottom corners i⁺ and i⁻.</p></div>
 </main>
+<script src="../assets/backdrop.js"></script>
+<script>Backdrop.page('penrose');</script>
+<div id="page-ready" hidden></div>
 </body>
 </html>

@@ -1,0 +1,25 @@
+/* Shared theme: a slate ground with teal for links and the current item, amber and violet
+   for the drawings behind each page. Load it after assets/widget.css, whose tokens it
+   overrides; the lab and Shot Behind Cover map their own tokens onto these colors. */
+:root{
+  --surface-0:#F2F5F8; --surface-1:#E6EBF1; --surface-2:#FFFFFF;
+  --text-primary:#152033; --text-secondary:#4F5B6E; --text-muted:#7D8797;
+  --border:rgba(21,32,51,.12); --border-strong:rgba(21,32,51,.22); --border-stronger:rgba(21,32,51,.4);
+  --text-accent:#0A7C70; --border-accent:#5FB8AE; --bg-accent:#D7EFEC;
+  --amber:#B5620A; --violet:#5B4FC4;
+  --glow-a:rgba(10,124,112,.20); --glow-b:rgba(217,134,15,.16); --glow-c:rgba(91,79,196,.16);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --surface-0:#0E131A; --surface-1:#141B25; --surface-2:#18212D;
+  --text-primary:#E5EAF1; --text-secondary:#A3AEBF; --text-muted:#7A8596;
+  --border:rgba(229,234,241,.10); --border-strong:rgba(229,234,241,.2); --border-stronger:rgba(229,234,241,.38);
+  --text-accent:#3CC4B4; --border-accent:#2A8F84; --bg-accent:#12302D;
+  --amber:#E9A24A; --violet:#9C95F0;
+  --glow-a:rgba(60,196,180,.16); --glow-b:rgba(233,162,74,.11); --glow-c:rgba(156,149,240,.13); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --surface-0:#0E131A; --surface-1:#141B25; --surface-2:#18212D;
+  --text-primary:#E5EAF1; --text-secondary:#A3AEBF; --text-muted:#7A8596;
+  --border:rgba(229,234,241,.10); --border-strong:rgba(229,234,241,.2); --border-stronger:rgba(229,234,241,.38);
+  --text-accent:#3CC4B4; --border-accent:#2A8F84; --bg-accent:#12302D;
+  --amber:#E9A24A; --violet:#9C95F0;
+  --glow-a:rgba(60,196,180,.16); --glow-b:rgba(233,162,74,.11); --glow-c:rgba(156,149,240,.13); color-scheme:dark}

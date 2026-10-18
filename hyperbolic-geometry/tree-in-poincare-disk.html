@@ -8,7 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&family=Public+Sans:wght@400;500&display=swap">
 <link rel="stylesheet" href="../assets/widget.css">
+<link rel="stylesheet" href="../assets/theme.css">
 <link rel="stylesheet" href="../assets/transition.css">
+<link rel="expect" href="#page-ready" blocking="render">
 <script src="../assets/embed.js"></script>
 </head>
 <body>
@@ -22,5 +24,9 @@
 </div>
 <div class="notes"><p>The rim of the disk is infinitely far away, so the crowding near the edge is an artifact of the picture. Kleinberg (2007) uses exactly this property to give every node in a network a routing address.</p></div>
 </main>
+<script src="../assets/farey-bg.js"></script>
+<script src="../assets/backdrop.js"></script>
+<script>Backdrop.page('disk');</script>
+<div id="page-ready" hidden></div>
 </body>
 </html>

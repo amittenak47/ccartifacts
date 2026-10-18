@@ -7,28 +7,32 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../assets/theme.css">
 <link rel="stylesheet" href="../assets/transition.css">
+<link rel="expect" href="#page-ready" blocking="render">
 <style>
-/* Layout: three synchronized "screens" (Alice, Server, Bob) over one shared wire timeline, controls above, verdicts below */
+/* Layout: three synchronized "screens" (Alice, Server, Bob) over one shared wire timeline, controls above, verdicts below.
+   Colors follow the shared theme (slate, with violet, amber and teal for Alice, the server and Bob),
+   written as hex because the canvas code mixes them with alpha. The page sits on the shared background. */
 :root{
-  --bg:#E8ECEF; --surface:#F7F9FA; --surface-2:#EEF2F4; --ink:#16212A; --muted:#5A6873; --line:#CBD3D9;
-  --alice:#7C4BD6; --bob:#0F7F92; --server:#A66F0B; --danger:#D23A2C; --ok:#2C8A55;
-  --floor:#F3F6F7; --grid:#E2E8EB; --pillar:#26313A; --hatch:#4A5660;
+  --bg:#F2F5F8; --surface:#FFFFFF; --surface-2:#E9EEF3; --ink:#152033; --muted:#4F5B6E; --line:#D5DBE4;
+  --alice:#5B4FC4; --bob:#0A7C70; --server:#B5620A; --danger:#D23A2C; --ok:#2C8A55;
+  --floor:#F7F9FB; --grid:#E6EBF1; --pillar:#26313A; --hatch:#4A5660;
   --f-display:"Chakra Petch","Segoe UI",system-ui,sans-serif;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0F141A; --surface:#161D25; --surface-2:#1C252F; --ink:#E2E8ED; --muted:#8E9BA6; --line:#2C3743;
-    --alice:#B08BFF; --bob:#3CC3D6; --server:#E3AC40; --danger:#FF6A5C; --ok:#5ACB8B;
-    --floor:#121920; --grid:#1B242D; --pillar:#3B4754; --hatch:#596673; color-scheme:dark;
+    --bg:#0E131A; --surface:#18212D; --surface-2:#1F2935; --ink:#E5EAF1; --muted:#A3AEBF; --line:#26303D;
+    --alice:#9C95F0; --bob:#3CC4B4; --server:#E9A24A; --danger:#FF6A5C; --ok:#5ACB8B;
+    --floor:#111823; --grid:#1A2330; --pillar:#3B4754; --hatch:#596673; color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0F141A; --surface:#161D25; --surface-2:#1C252F; --ink:#E2E8ED; --muted:#8E9BA6; --line:#2C3743;
-  --alice:#B08BFF; --bob:#3CC3D6; --server:#E3AC40; --danger:#FF6A5C; --ok:#5ACB8B;
-  --floor:#121920; --grid:#1B242D; --pillar:#3B4754; --hatch:#596673; color-scheme:dark;
+  --bg:#0E131A; --surface:#18212D; --surface-2:#1F2935; --ink:#E5EAF1; --muted:#A3AEBF; --line:#26303D;
+  --alice:#9C95F0; --bob:#3CC4B4; --server:#E9A24A; --danger:#FF6A5C; --ok:#5ACB8B;
+  --floor:#111823; --grid:#1A2330; --pillar:#3B4754; --hatch:#596673; color-scheme:dark;
 }
 *{box-sizing:border-box}
 body{margin:0}
@@ -720,5 +724,8 @@ st.t=reduce?T1:T0; setPlaying(!reduce);
 requestAnimationFrame(frame);
 })();
 </script>
+<script src="../assets/backdrop.js"></script>
+<script>Backdrop.page('lanes');</script>
+<div id="page-ready" hidden></div>
 </body>
 </html>

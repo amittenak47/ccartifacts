@@ -49,6 +49,15 @@ h2,h3{font-family:var(--f-display);font-weight:600;margin:0;letter-spacing:.01em
 h2{font-size:18px}
 h3{font-size:15px}
 
+/* tabs */
+.tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--line)}
+.tabs button{appearance:none;background:transparent;border:0;border-bottom:3px solid transparent;margin-bottom:-1px;padding:8px 14px 9px;cursor:pointer;color:var(--muted);font:inherit;display:flex;flex-direction:column;align-items:flex-start;line-height:1.2;text-align:left}
+.tabs button b{font-family:var(--f-display);font-size:17px;font-weight:600;color:var(--muted)}
+.tabs button span{font-family:var(--f-mono);font-size:11px;letter-spacing:.04em}
+.tabs button[aria-selected="true"]{border-bottom-color:var(--server)}
+.tabs button[aria-selected="true"] b{color:var(--ink)}
+.tabs button:hover b{color:var(--ink)}
+
 /* controls */
 .controls{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:14px}
 .row{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center}
@@ -103,6 +112,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .legend i{display:inline-block;width:18px;height:0;border-top:2px solid var(--muted);vertical-align:middle;margin-right:5px}
 .legend i.F{border-color:var(--ink)} .legend i.H{border-color:var(--server)} .legend i.Hp{border-top-style:dashed;border-color:var(--server)} .legend i.L{border-color:var(--line)}
 .legend i.band{height:8px;border:0;background:var(--danger);opacity:.25}
+.legend i.Rw{border-top:2px dotted var(--server)}
 .tl-scroll{overflow-x:auto;line-height:0}
 #tl{display:block;cursor:crosshair}
 
@@ -143,16 +153,17 @@ footer b{color:var(--ink);font-weight:600}
     <a class="crumb" href="../index.html#shot-behind-cover">&larr; All artifacts</a>
     <p class="eyebrow">Lee &amp; Chang · MMSys ’18 · Advanced Lag Compensation</p>
     <h1>Shot behind <span class="cut">cover</span></h1>
-    <p class="lede">Three screens of the same firefight, each showing the world as that machine knows it. <b>Alice</b> has a 250ms ping, <b>Bob</b> has 50ms. Watch how traditional lag compensation (TLC), ping‑limited compensation (CLC) and the paper's advanced lag compensation (ALC) decide who gets hit when both players shoot.</p>
+    <p class="lede" id="lede"></p>
   </header>
+
+  <nav class="tabs" role="tablist" aria-label="Simulation">
+    <button type="button" role="tab" id="tab-comp" data-tab="comp" aria-selected="true"><b>Lag compensation</b><span>TLC · CLC · ALC</span></button>
+    <button type="button" role="tab" id="tab-none" data-tab="none" aria-selected="false"><b>No compensation</b><span>Lead your shots · BF1942 era</span></button>
+  </nav>
 
   <section class="controls" aria-label="Simulation controls">
     <div class="row">
-      <div class="seg" id="alg" role="group" aria-label="Algorithm">
-        <button type="button" data-alg="TLC" aria-pressed="true"><b>TLC</b><span>Traditional</span></button>
-        <button type="button" data-alg="CLC" aria-pressed="false"><b>CLC</b><span>Ping‑limited</span></button>
-        <button type="button" data-alg="ALC" aria-pressed="false"><b>ALC</b><span>Advanced (paper)</span></button>
-      </div>
+      <div class="seg" id="alg" role="group" aria-label="Mode"></div>
       <label class="field" for="scenario">Scenario
         <select id="scenario"></select>
       </label>
@@ -180,6 +191,7 @@ footer b{color:var(--ink);font-weight:600}
       <label class="field" for="pingB">Bob ping <span class="val" id="vPingB"></span><input type="range" id="pingB" min="10" max="200" step="10" value="50"></label>
       <label class="field" id="fClc" for="clc">CLC ping limit <span class="val" id="vClc"></span><input type="range" id="clc" min="50" max="400" step="10" value="200"></label>
       <label class="field" id="fThr" for="thr">ALC appeal threshold <span class="val" id="vThr"></span><input type="range" id="thr" min="0" max="300" step="10" value="50"></label>
+      <label class="field" id="fRw" for="rw" hidden>Fixed server rewind <span class="val" id="vRw"></span><input type="range" id="rw" min="0" max="300" step="10" value="0"></label>
       <div style="display:flex;flex-direction:column;gap:6px;justify-content:center">
         <label class="check" for="showTrue"><input type="checkbox" id="showTrue" checked> Show true positions</label>
         <label class="check" id="fCheat" for="cheat"><input type="checkbox" id="cheat"> Bob's client denies every hit</label>
@@ -217,6 +229,7 @@ footer b{color:var(--ink);font-weight:600}
         <span><i class="Hp"></i>provisional hit</span>
         <span><i style="border-color:var(--bob)"></i>C / D confirm · deny</span>
         <span><i class="band"></i>age of the position the hit used</span>
+        <span><i class="Rw"></i>server rewind</span>
       </div>
     </div>
     <div class="tl-scroll"><canvas id="tl" aria-label="Message timeline. Click to jump to a time."></canvas></div>
@@ -255,20 +268,35 @@ const SCEN={
     A:[[150,150,200],[300,150,330]], B:[[100,540,260],[350,540,90]], shots:[["A",150],["B",180]]},
   strafe:{label:"Open ground · Bob strafes",
     desc:"Bob strafes sideways in the open and never reaches cover, so every hit is legitimate. This is where CLC hurts Alice and ALC costs a few extra milliseconds.",
-    A:[[0,150,200]], B:[[50,540,320],[267,540,190]], shots:[["B",120],["A",200]]}
+    A:[[0,150,200]], B:[[50,540,320],[267,540,190]], shots:[["B",120],["A",200]]},
+  run:{label:"Open run · Bob sprints, Alice sidesteps",
+    desc:"Bob runs across open ground the whole time and Alice sidesteps slowly. Nobody reaches cover, so this is the cleanest test of aiming: without compensation, Alice has to lead Bob by her full ping.",
+    A:[[0,150,215],[400,150,165]], B:[[0,540,360],[400,540,180]], shots:[["B",120],["A",200]]}
 };
 const NAME={A:"Alice",B:"Bob",S:"Server"}, OTHER={A:"B",B:"A"};
-const ALGS=["TLC","CLC","ALC"];
+const TABS={
+  comp:{algs:["TLC","CLC","ALC"],table:["TLC","CLC","ALC"],
+    lede:"Three screens of the same firefight, each showing the world as that machine knows it. <b>Alice</b> has a 250ms ping, <b>Bob</b> has 50ms. Watch how traditional lag compensation (TLC), ping‑limited compensation (CLC) and the paper's advanced lag compensation (ALC) decide who gets hit when both players shoot."},
+  none:{algs:["NONE_D","NONE_L"],table:["NONE_D","NONE_L","TLC"],
+    lede:"Before lag compensation, the server judged every shot against where <b>it</b> thought the target was when the shot arrived. Alice (250ms) has to aim well ahead of the Bob on her screen; Bob (50ms) barely has to. Battlefield 1942 worked this way, as did Call of Duty 2 servers that switched its lag compensation off."}
+};
+const SEG={TLC:["TLC","Traditional"],CLC:["CLC","Ping‑limited"],ALC:["ALC","Advanced (paper)"],NONE_D:["Aim","At the target"],NONE_L:["Lead","By your own ping"]};
+const COLNAME={TLC:"TLC",CLC:"CLC",ALC:"ALC",NONE_D:"No comp · aim",NONE_L:"No comp · lead"};
+const ALGS=["TLC","CLC","ALC","NONE_D","NONE_L"];
 const HOW={
+  NONE_D:{tag:"No lag compensation · aiming at the target",title:"The server checks the shot against the present",
+    text:"There is no rewind. The server tests the shot against where it believes the target is when the fire command arrives. Your screen shows the target half your ping plus half theirs in the past, and the command needs another half ping to reach the server. Aim straight at a moving target and the shot passes behind it."},
+  NONE_L:{tag:"No lag compensation · leading",title:"Aim ahead by your own ping",
+    text:"In this model the gap between what you see and what the server checks is exactly your own ping's worth of target movement, whatever the target's ping. The dashed “lead” marker extrapolates the target's on‑screen velocity by that much. It works while the target keeps moving the same way and fails when they stop or turn. In exchange, hits use a position only the victim's ping old, so low‑ping players are rarely shot behind cover. A fixed server rewind (partial compensation) shrinks the lead needed by the same amount."},
   TLC:{tag:"Traditional lag compensation",title:"The server rewinds to the shooter's view",
     text:"The server keeps a history of every player's position. When a fire event arrives it rolls the world back by the shooter's ping and checks the shot there, so a shot that was on target on the shooter's screen hits. The victim pays for it: the hit can arrive after they have already reached cover."},
   CLC:{tag:"Conditional lag compensation",title:"Rewind only for shooters under a ping limit",
-    text:"Introduced after Battlefield 4. Shooters with a ping under the limit get the normal rewind. Shots from laggier players are checked against the present, so they have to lead a moving target by roughly their ping. Battlefield and Overwatch use 250ms; the limit starts at 200ms here so Alice is over it."},
+    text:"Introduced in Battlefield 4's post‑launch netcode patches (2014) and kept in later Battlefield games. Shooters with a ping under the limit get the normal rewind. Shots from laggier players are checked against the present, so they have to lead a moving target by roughly their ping. Battlefield and Overwatch use 250ms; the limit starts at 200ms here so Alice is over it."},
   ALC:{tag:"Advanced lag compensation · this paper",title:"Rewind for everyone, let low‑ping victims appeal",
     text:"The server rewinds like TLC, but a hit on a victim under the appeal threshold is provisional. The victim's client re‑traces line of sight to the shooter from where it is now and confirms or denies. A denial is re‑checked by the server with the position sent alongside it, so a lying client is overruled. Confirmed hits reach the shooter one victim‑ping later."}
 };
 
-const cfg={alg:"TLC",scenario:"duel",pingA:250,pingB:50,clc:200,thr:50,cheat:false,showTrue:true};
+const cfg={tab:"comp",alg:"TLC",lastAlg:{comp:"TLC",none:"NONE_D"},scenario:"duel",pingA:250,pingB:50,clc:200,thr:50,rewind:0,cheat:false,showTrue:true};
 const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const st={t:0,playing:!reduce,speed:0.1,hold:0,dirty:true};
 let SIM={}, T0=0, T1=500, EVT=[];
@@ -300,6 +328,7 @@ function rayHit(o,aim,c){
   if(blockAt(o,hp)!==null) return null;
   return hp;
 }
+function velAt(kf,t){ const a=pos(kf,t-16), b=pos(kf,t); return {x:(b.x-a.x)/16,y:(b.y-a.y)/16}; }
 function rayEnd(o,aim){
   const dx=aim.x-o.x, dy=aim.y-o.y, L=Math.hypot(dx,dy)||1;
   const far={x:o.x+dx/L*900,y:o.y+dy/L*900}; const u=blockAt(o,far);
@@ -318,22 +347,39 @@ function simulate(alg){
     const age=ow[s]+ow[v], aimT=tF-age, aim=tp(v,aimT), o=tp(s,tF), tS=tF+ow[s];
     msgs.push({from:v,to:"S",t0:aimT,t1:aimT+ow[v],k:"L",who:v},{from:"S",to:s,t0:aimT+ow[v],t1:tF,k:"L",who:v},{from:s,to:"S",t0:tF,t1:tS,k:"F",who:s});
     marks.push({lane:s,t:tF,k:"fire",who:s});
-    F({k:"tracer",panel:s,t0:tF,t1:tF+170,o,aim,who:s});
-    T(s,tF,240,`Fires at ${Nv}, on target here`,s);
-    log.push({t:tF,who:s,text:`${Ns} fires at ${Nv} as drawn on screen, a position ${age}ms old.`});
-    const comp=alg!=="CLC"||ping[s]<=cfg.clc;
-    const cur=tp(v,tS-ow[v]), tgt=comp?aim:cur, hp=rayHit(o,aim,tgt), rw=comp?ping[s]:0;
-    const srvBase=comp?`Rewind ${rw}ms`:`${Ns} ${ping[s]}ms > ${cfg.clc}ms limit · no rewind`;
-    F({k:"srv",panel:"S",t0:tS,t1:tS+300,o,aim,tgt,comp,rw,hit:!!hp,s,v});
+    const none=alg.startsWith("NONE"), leading=alg==="NONE_L";
+    const leadMs=none?Math.max(0,ping[s]-cfg.rewind):0;
+    let aimP=aim;
+    if(leading){ const vel=velAt(sc[v],aimT); aimP={x:aim.x+vel.x*leadMs,y:aim.y+vel.y*leadMs}; }
+    const leadPx=Math.round(Math.hypot(aimP.x-aim.x,aimP.y-aim.y));
+    F({k:"tracer",panel:s,t0:tF,t1:tF+170,o,aim:aimP,who:s});
+    if(!none){
+      T(s,tF,240,`Fires at ${Nv}, on target here`,s);
+      log.push({t:tF,who:s,text:`${Ns} fires at ${Nv} as drawn on screen, a position ${age}ms old.`});
+    } else if(leading){
+      T(s,tF,240,leadPx>1?`Leads ${Nv} by ${leadMs}ms (${leadPx}px)`:`${Nv} looks still · aims straight at him`,s);
+      log.push({t:tF,who:s,text:leadPx>1?`${Ns} aims ${leadMs}ms of ${Nv}'s on-screen movement ahead of him (${leadPx}px).`:`${Nv} looks stationary on ${Ns}'s screen, so ${Ns} aims straight at him.`});
+    } else {
+      T(s,tF,240,`Fires straight at ${Nv}`,s);
+      log.push({t:tF,who:s,text:`${Ns} fires straight at ${Nv} as drawn on screen, a position ${age}ms old.`});
+    }
+    const comp=none?cfg.rewind>0:(alg!=="CLC"||ping[s]<=cfg.clc);
+    const rw=none?cfg.rewind:(comp?ping[s]:0);
+    const usedT=none?tS-ow[v]-rw:(comp?aimT:tS-ow[v]);
+    const tgt=tp(v,usedT), hp=rayHit(o,aimP,tgt);
+    const srvBase=none?(rw?`Fixed rewind ${rw}ms`:"No rewind · checks present"):(comp?`Rewind ${rw}ms`:`${Ns} ${ping[s]}ms > ${cfg.clc}ms limit · no rewind`);
+    F({k:"srv",panel:"S",t0:tS,t1:tS+460,o,aim:aimP,tgt,comp,rw,hit:!!hp,s,v,vNowT:tS-ow[v],vThenT:usedT,fixed:none});
     const res={shot:`${Ns} → ${Nv}`,tF};
     if(!hp){
       T("S",tS,300,`${srvBase} · MISS`,"muted");
-      log.push({t:tS,who:"S",text:comp?`Server rewinds ${rw}ms to ${Ns}'s view: miss.`:`Server: ${Ns}'s ping (${ping[s]}ms) is over the ${cfg.clc}ms limit, so it checks ${Nv}'s current position. Miss.`});
+      log.push({t:tS,who:"S",text:none?`Server checks the shot against where it believes ${Nv} is now${rw?`, minus a fixed ${rw}ms`:""}: miss.`:(comp?`Server rewinds ${rw}ms to ${Ns}'s view: miss.`:`Server: ${Ns}'s ping (${ping[s]}ms) is over the ${cfg.clc}ms limit, so it checks ${Nv}'s current position. Miss.`)});
       marks.push({lane:"S",t:tS,k:"miss"});
       const tM=tS+ow[s];
       T(s,tM,300,"No hit registered","muted");
-      log.push({t:tM,who:s,text:`${Ns} gets no hit marker, though the shot was on target on screen.`});
-      Object.assign(res,{res:"Miss",tone:"warn",sub:comp?"missed in the rewound world":`not compensated; ${Ns} had to lead ${Nv} by ~${ping[s]}ms`});
+      log.push({t:tM,who:s,text:`${Ns} gets no hit marker${leading?".":", though the shot was on target on screen."}`});
+      const sub=!none?(comp?"missed in the rewound world":`not compensated; ${Ns} had to lead ${Nv} by ~${ping[s]}ms`)
+        :(leading?`${Nv} changed speed or direction after ${Ns} saw him, so the lead was wrong`:`aimed where ${Nv} was; needed ~${leadMs}ms of lead`);
+      Object.assign(res,{res:"Miss",tone:"warn",sub});
     } else if(alg==="ALC" && ping[v]<=cfg.thr){
       const tR=tS+ow[v], tC=tR+ow[v];
       T("S",tS,Math.max(260,tC-tS),`${srvBase} · HIT · provisional, ask ${Nv}`,"S");
@@ -381,18 +427,20 @@ function simulate(alg){
       const tR=tS+ow[v], tM=tS+ow[s];
       const seen=tp(s,tR-age), vp=tp(v,tR), sbc=blockAt(vp,seen)!==null, inel=alg==="ALC";
       T("S",tS,300,`${srvBase} · HIT${inel?` · ${Nv} ${ping[v]}ms > ${cfg.thr}ms, no appeal`:""}`,"S");
-      log.push({t:tS,who:"S",text:`Server ${comp?`rewinds ${rw}ms to ${Ns}'s view`:"checks the present"}: hit.${inel?` ${Nv}'s ping (${ping[v]}ms) is above the ${cfg.thr}ms appeal threshold, so the hit is final.`:""}`});
+      log.push({t:tS,who:"S",text:none?`Server checks the shot against where it believes ${Nv} is now${rw?`, minus a fixed ${rw}ms`:""}: hit.`:`Server ${comp?`rewinds ${rw}ms to ${Ns}'s view`:"checks the present"}: hit.${inel?` ${Nv}'s ping (${ping[v]}ms) is above the ${cfg.thr}ms appeal threshold, so the hit is final.`:""}`});
       msgs.push({from:"S",to:v,t0:tS,t1:tR,k:"H",who:"S"},{from:"S",to:s,t0:tS,t1:tM,k:"H",who:"S"});
-      bands.push({lane:v,a:aimT,b:tR,sbc});
+      bands.push({lane:v,a:usedT,b:tR,sbc});
       F({k:"dmg",panel:v,t0:tR,t1:tR+380,sbc,s,v}); marks.push({lane:v,t:tR,k:"dmg",sbc});
       T(v,tR,340,sbc?"Hit behind cover!":"Hit taken",sbc?"danger":v);
-      log.push({t:tR,who:v,text:sbc?`${Nv} takes the hit behind cover. It was decided using where ${Nv} stood ${tR-aimT}ms earlier.`:`${Nv} takes the hit while still in the open.`});
+      log.push({t:tR,who:v,text:sbc?`${Nv} takes the hit behind cover. It was decided using where ${Nv} stood ${Math.round(tR-usedT)}ms earlier.`:`${Nv} takes the hit while still in the open.`});
       F({k:"marker",panel:s,t0:tM,t1:tM+380,s,v}); T(s,tM,320,`Hit marker · ${tM-tF}ms after firing`,s);
       log.push({t:tM,who:s,text:`${Ns} sees the hit marker ${tM-tF}ms after firing.`});
-      Object.assign(res, sbc?{res:"Hit · shot behind cover",tone:"danger",sub:inel?`${Nv}'s ping is above the appeal threshold; this one comes from ${Nv}'s own lag`:`${Nv} was already behind the pillar when it landed`}:{res:"Hit",tone:"",sub:`hit marker after ${tM-tF}ms`});
+      Object.assign(res, sbc?{res:"Hit · shot behind cover",tone:"danger",sub:inel?`${Nv}'s ping is above the appeal threshold; this one comes from ${Nv}'s own lag`:(none?`no rewind, but ${Nv}'s own ${ping[v]}ms ping delays the hit`:`${Nv} was already behind the pillar when it landed`)}:{res:"Hit",tone:"",sub:`hit marker after ${tM-tF}ms`});
     }
     out.push(res);
   });
+  const checks=fx.filter(f=>f.k==="srv").sort((a,b)=>a.t0-b.t0);
+  checks.forEach((f,i)=>{ if(checks[i+1]) f.t1=Math.min(f.t1,checks[i+1].t0); });
   let lo=Infinity,hi=-Infinity;
   msgs.forEach(m=>{lo=Math.min(lo,m.t0);hi=Math.max(hi,m.t1);});
   fx.forEach(f=>{hi=Math.max(hi,f.t0+60);});
@@ -402,7 +450,7 @@ function simulate(alg){
 
 function recompute(){
   ALGS.forEach(a=>SIM[a]=simulate(a));
-  let lo=Infinity,hi=-Infinity; ALGS.forEach(a=>{lo=Math.min(lo,SIM[a].lo);hi=Math.max(hi,SIM[a].hi);});
+  let lo=Infinity,hi=-Infinity; TABS[cfg.tab].table.forEach(a=>{lo=Math.min(lo,SIM[a].lo);hi=Math.max(hi,SIM[a].hi);});
   T0=Math.floor((Math.min(lo,0)-20)/50)*50; T1=Math.ceil((hi+30)/50)*50;
   scrub.min=T0; scrub.max=T1;
   st.t=Math.min(Math.max(st.t,T0),T1);
@@ -529,6 +577,27 @@ function drawPanel(P,t,S){
       for(let i=0;i<4;i++){ const an=Math.PI/4+i*Math.PI/2, r1=(R+5)*sc, r2=(R+14)*sc;
         ctx.beginPath(); ctx.moveTo(tg.x+Math.cos(an)*r1,tg.y+Math.sin(an)*r1); ctx.lineTo(tg.x+Math.cos(an)*r2,tg.y+Math.sin(an)*r2); ctx.stroke(); }
     } else if(f.k==="srv"){
+      // The rewind: the server keeps a history of where the target has been (one dot per
+      // 60 Hz tick), walks the target back through it to where the shooter saw them, and
+      // only then checks the shot.
+      const path=tt=>pos(S.sc[f.v],tt), span=f.vNowT-f.vThenT;
+      const ra=span>0?Math.min(1,u/0.55):1, shownT=f.vNowT-ra*span;
+      if(span>0){
+        for(let tt=f.vThenT; tt<=f.vNowT+0.01; tt+=1000/60){
+          const p=path(tt), on=tt>=shownT-0.01;
+          ctx.fillStyle=rgba(col(f.v),on?.6:.2); ctx.beginPath(); ctx.arc(p.x,p.y,on?3.2:2.2,0,Math.PI*2); ctx.fill();
+        }
+        if(ra<1){
+          const g=path(shownT);
+          ctx.strokeStyle=col(f.v); ctx.lineWidth=2/k; ctx.setLineDash([5/k,3/k]);
+          ctx.beginPath(); ctx.arc(g.x,g.y,R,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+          ctx.fillStyle=rgba(col(f.v),.15); ctx.fill();
+          const left=g.x>MAP.w*0.6, lx=left?g.x-R-8:g.x+R+8, al=left?"right":"left";
+          label(ctx,k,`rewinding ${NAME[f.v]} −${Math.round(ra*f.rw)}ms`,lx,g.y-7,C.server,{align:al,bold:true});
+          label(ctx,k,f.fixed?"fixed server rewind":`${NAME[f.s]}'s ping`,lx,g.y+8,C.server,{align:al,size:10});
+          return;
+        }
+      }
       const e=rayEnd(f.o,f.aim);
       ctx.strokeStyle=rgba(col(f.s),.85); ctx.lineWidth=2/k; ctx.beginPath(); ctx.moveTo(f.o.x,f.o.y); ctx.lineTo(e.x,e.y); ctx.stroke();
       const now=v[f.v];
@@ -541,7 +610,9 @@ function drawPanel(P,t,S){
         const a=Math.atan2(f.tgt.y-my,f.tgt.x+R-mx);
         ctx.fillStyle=C.server; ctx.beginPath(); ctx.moveTo(f.tgt.x+R,f.tgt.y);
         ctx.lineTo(f.tgt.x+R-Math.cos(a-.4)*9,f.tgt.y-Math.sin(a-.4)*9); ctx.lineTo(f.tgt.x+R-Math.cos(a+.4)*9,f.tgt.y-Math.sin(a+.4)*9); ctx.fill();
-        label(ctx,k,`−${f.rw}ms`,mx+4,my,C.server,{align:"left",bold:true});
+        const left=mx>MAP.w*0.7, lx=left?Math.min(now.x,f.tgt.x)-R-8:mx+4, al=left?"right":"left";
+        label(ctx,k,`−${f.rw}ms`,lx,my-7,C.server,{align:al,bold:true});
+        label(ctx,k,f.fixed?"fixed server rewind":`${NAME[f.s]}'s ping`,lx,my+8,C.server,{align:al,size:10});
       }
       label(ctx,k,f.comp?(f.rw?"rewound":"checked"):"now",f.tgt.x,f.tgt.y-R-9,col(f.v),{size:10});
       label(ctx,k,f.hit?"HIT":"MISS",f.tgt.x-R-8,f.tgt.y,f.hit?C.danger:C.muted,{align:"right",bold:true,display:true,size:14});
@@ -557,6 +628,20 @@ function drawPanel(P,t,S){
       if(f.sbc) losLine(ctx,k,me,sh,C.danger,true);
     }
   });
+  if(cfg.tab==="none" && role!=="S"){
+    const opp=OTHER[role], seenT=t-S.ow.A-S.ow.B, vel=velAt(S.sc[opp],seenT);
+    const lead=Math.max(0,S.ping[role]-cfg.rewind), seen=v[opp];
+    const lp={x:seen.x+vel.x*lead,y:seen.y+vel.y*lead};
+    if(Math.hypot(lp.x-seen.x,lp.y-seen.y)>2){
+      const a=cfg.alg==="NONE_L"?1:.5, c=rgba(C.ink,a);
+      ctx.strokeStyle=rgba(C.ink,a*.5); ctx.lineWidth=1.2/k; ctx.setLineDash([3/k,3/k]);
+      ctx.beginPath(); ctx.moveTo(seen.x,seen.y); ctx.lineTo(lp.x,lp.y); ctx.stroke();
+      ctx.strokeStyle=c; ctx.lineWidth=1.6/k; ctx.setLineDash([4/k,3/k]);
+      ctx.beginPath(); ctx.arc(lp.x,lp.y,R,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(lp.x-5,lp.y); ctx.lineTo(lp.x+5,lp.y); ctx.moveTo(lp.x,lp.y-5); ctx.lineTo(lp.x,lp.y+5); ctx.stroke();
+      label(ctx,k,`lead ${lead}ms`,lp.x+R+5,lp.y,c,{align:"left",size:10,bold:true});
+    }
+  }
   drawPlayer(ctx,k,"A",v.A,v.B,role==="A");
   drawPlayer(ctx,k,"B",v.B,v.A,role==="B");
   // feed
@@ -594,6 +679,16 @@ function drawTimeline(t,S){
     if(t>b.a){ ctx.fillStyle=rgba(b.sbc?C.danger:C.muted,b.sbc?.26:.16); ctx.fillRect(x0,y-9,Math.max(0,x1-x0),18); }
     if(t>=b.b){ ctx.fillStyle=b.sbc?C.danger:C.muted; ctx.font="600 10.5px 'JetBrains Mono',monospace"; ctx.textAlign="center";
       const ly=b.lane==="B"?y+20:y-18; ctx.fillText(`${Math.round(b.b-b.a)}ms old`,(x0+tx(b.b))/2,ly); }
+  });
+  // rewinds: how far back the server rolled the target for each shot it checked
+  S.fx.forEach(f=>{
+    if(f.k!=="srv"||!f.comp||!f.rw||t<f.t0) return;
+    const y=LANE.S-15, x1=tx(f.t0), x0=tx(f.t0-f.rw), xe=x1-(x1-x0)*Math.min(1,(t-f.t0)/((f.t1-f.t0)*0.55));
+    ctx.strokeStyle=C.server; ctx.lineWidth=1.8; ctx.setLineDash([2,3]);
+    ctx.beginPath(); ctx.moveTo(x1,y); ctx.lineTo(xe,y); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle=C.server; ctx.beginPath(); ctx.moveTo(xe,y); ctx.lineTo(xe+7,y-4); ctx.lineTo(xe+7,y+4); ctx.fill();
+    ctx.font="600 10.5px 'JetBrains Mono',monospace"; ctx.textAlign="center";
+    ctx.fillText(`rewind ${NAME[f.v]} ${f.rw}ms`,(x1+Math.max(xe,x0))/2,y-8);
   });
   // messages
   S.msgs.forEach(m=>{
@@ -640,23 +735,35 @@ function renderTexts(){
   $("#metaA").textContent=`ping ${cfg.pingA}ms`; $("#metaB").textContent=`ping ${cfg.pingB}ms`;
   $("#noteA").textContent=`Draws Bob ${d}ms in the past (Bob→server ${ow.B}ms + server→Alice ${ow.A}ms).`;
   $("#noteB").textContent=`Draws Alice ${d}ms in the past (Alice→server ${ow.A}ms + server→Bob ${ow.B}ms).`;
-  $("#noteS").textContent=`Knows Alice ${ow.A}ms late and Bob ${ow.B}ms late. Keeps history so it can rewind.`;
+  const none=cfg.tab==="none";
+  $("#noteS").textContent=none?`Knows Alice ${ow.A}ms late and Bob ${ow.B}ms late. ${cfg.rewind?`Rewinds a fixed ${cfg.rewind}ms for every shot.`:"Keeps no history: every shot is judged against the present."}`
+    :`Knows Alice ${ow.A}ms late and Bob ${ow.B}ms late. Keeps history so it can rewind.`;
   $("#vPingA").textContent=cfg.pingA+"ms"; $("#vPingB").textContent=cfg.pingB+"ms";
   $("#vClc").textContent=cfg.clc+"ms"; $("#vThr").textContent=cfg.thr+"ms";
+  $("#vRw").textContent=cfg.rewind?cfg.rewind+"ms":"0ms (none)";
+  $("#fClc").hidden=none; $("#fThr").hidden=none; $("#fCheat").hidden=none; $("#fRw").hidden=!none;
   $("#fClc").classList.toggle("dim",cfg.alg!=="CLC");
   $("#fThr").classList.toggle("dim",cfg.alg!=="ALC");
   $("#fCheat").classList.toggle("dim",cfg.alg!=="ALC");
+  $("#lede").innerHTML=TABS[cfg.tab].lede;
   $("#scdesc").textContent=SCEN[cfg.scenario].desc;
   const h=HOW[cfg.alg]; $("#howTag").textContent=h.tag; $("#howTitle").textContent=h.title; $("#howText").textContent=h.text;
-  document.querySelectorAll("#alg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.alg===cfg.alg?"true":"false"));
+  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===cfg.tab?"true":"false"));
+  const seg=$("#alg"), algs=TABS[cfg.tab].algs, segKey=algs.join();
+  if(seg.dataset.key!==segKey){
+    seg.dataset.key=segKey;
+    seg.innerHTML=algs.map(a=>`<button type="button" data-alg="${a}" aria-pressed="false"><b>${SEG[a][0]}</b><span>${SEG[a][1]}</span></button>`).join("");
+  }
+  seg.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.alg===cfg.alg?"true":"false"));
 }
 function renderTable(){
+  const cols=TABS[cfg.tab].table;
   const rows=SIM.TLC.out.map((r,i)=>{
-    const cells=ALGS.map(a=>{ const o=SIM[a].out[i];
+    const cells=cols.map(a=>{ const o=SIM[a].out[i];
       return `<td class="${a===cfg.alg?"cur":""}"><span class="res ${o.tone}">${o.res}</span><small class="sub">${o.sub}</small></td>`; }).join("");
     return `<tr><td class="shot">${r.shot}<small>fires at t = ${r.tF}ms</small></td>${cells}</tr>`;
   }).join("");
-  $("#outTbl").innerHTML=`<thead><tr><th>Shot</th>${ALGS.map(a=>`<th class="${a===cfg.alg?"cur":""}">${a}</th>`).join("")}</tr></thead><tbody>${rows}</tbody>`;
+  $("#outTbl").innerHTML=`<thead><tr><th>Shot</th>${cols.map(a=>`<th class="${a===cfg.alg?"cur":""}">${COLNAME[a]}${cfg.tab==="none"&&a==="TLC"?" (for reference)":""}</th>`).join("")}</tr></thead><tbody>${rows}</tbody>`;
 }
 let logEls=[];
 function renderLog(){
@@ -694,7 +801,18 @@ function frame(now){
 /* ---------- controls ---------- */
 const sel=$("#scenario");
 sel.innerHTML=Object.entries(SCEN).map(([k,s])=>`<option value="${k}">${s.label}</option>`).join("");
-document.querySelectorAll("#alg button").forEach(b=>b.addEventListener("click",()=>{ cfg.alg=b.dataset.alg; buildEvents(); renderTexts(); renderTable(); renderLog(); st.dirty=true; }));
+$("#alg").addEventListener("click",e=>{ const b=e.target.closest("button[data-alg]"); if(!b) return;
+  cfg.alg=b.dataset.alg; cfg.lastAlg[cfg.tab]=cfg.alg; buildEvents(); renderTexts(); renderTable(); renderLog(); st.dirty=true; });
+function setTab(tab){
+  if(!TABS[tab]||tab===cfg.tab) return;
+  cfg.tab=tab; cfg.alg=cfg.lastAlg[tab];
+  if(tab==="none"&&cfg.scenario==="duel"&&!setTab.visited){ cfg.scenario="run"; sel.value="run"; }
+  if(tab==="none") setTab.visited=true;
+  try{ history.replaceState(null,"",tab==="none"?"#nocomp":"#comp"); }catch(_){}
+  renderTexts(); st.t=T0; recompute(); st.t=T0; st.hold=0;
+}
+document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
+$("#rw").addEventListener("input",e=>{ cfg.rewind=+e.target.value; recompute(); });
 sel.addEventListener("change",()=>{ cfg.scenario=sel.value; st.t=T0; recompute(); st.t=T0; st.hold=0; });
 $("#speed").addEventListener("change",e=>{ st.speed=+e.target.value; });
 const playBtn=$("#play");
@@ -720,6 +838,7 @@ new ResizeObserver(sizeAll).observe(tl.wrap);
 if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{st.dirty=true;});
 
 readColors(); recompute(); sizeAll();
+if(location.hash==="#nocomp") setTab("none");
 st.t=reduce?T1:T0; setPlaying(!reduce);
 requestAnimationFrame(frame);
 })();

@@ -8,7 +8,7 @@
    moves at `rate` times the scroll speed. Returns {draw} to redraw immediately.
 
    Backdrop.page(motif) is the artifact-page background: three color washes and one drawing,
-   'antennas', 'penrose', 'disk', 'hexes' or 'lanes', that drifts up slower than the page. */
+   'antennas', 'penrose', 'disk', 'hexes', 'lanes' or 'strata', that drifts up slower than the page. */
 (function () {
   var root = document.documentElement, reduce = matchMedia('(prefers-reduced-motion: reduce)');
   function tok(n) { return getComputedStyle(root).getPropertyValue(n).trim(); }
@@ -72,6 +72,18 @@
     c.globalAlpha = alpha; c.fillStyle = col.B; c.beginPath(); c.arc(X(380), y.B, 5, 0, Math.PI * 2); c.fill();
   }
 
+  // Bedded rock seen side-on, with the oil window as an amber band two layers down.
+  function strata(c, cx, cy, S, alpha) {
+    var w = S * 1.2, h = S * 0.9, x0 = cx - w / 2, top = cy - h / 2, n = 9, gap = h / n;
+    c.globalAlpha = alpha * 0.7; c.fillStyle = tok('--amber');
+    c.fillRect(x0, top + gap * 3, w, gap * 2);
+    c.strokeStyle = tok('--text-secondary'); c.lineWidth = 1.2;
+    for (var i = 0; i <= n; i++) {
+      c.globalAlpha = alpha * (i === 3 || i === 5 ? 1 : 0.6);
+      (function (i) { line(c, function (u) { var x = x0 + u * w; return [x, top + i * gap + Math.sin(u * 6 + i * 1.7) * gap * 0.18]; }, 60); })(i);
+    }
+  }
+
   function start(paint) {
     var cv = document.getElementById('bg');
     if (!cv) {
@@ -116,10 +128,11 @@
         else if (motif === 'penrose') penrose(c, x, y, S, tok('--violet'), tok('--amber'), 0.36 * a);
         else if (motif === 'hexes') hexes(c, x, y, S, 0.3 * a, p.dark);
         else if (motif === 'lanes') lanes(c, x, y, S, 0.32 * a);
+        else if (motif === 'strata') strata(c, x, y, S, 0.34 * a);
         else if (motif === 'disk' && window.fareyDraw) window.fareyDraw(c, { ox: x, oy: y, R: S * 0.5, shift: 0.35 + p.y / 2400, rim: 0.45 * a, lines: 0.32 * a, color: tok('--text-accent') });
       });
     });
   }
 
-  window.Backdrop = { start: start, page: page, line: line, glow: glow, antennas: antennas, penrose: penrose, hexes: hexes, lanes: lanes };
+  window.Backdrop = { start: start, page: page, line: line, glow: glow, antennas: antennas, penrose: penrose, hexes: hexes, lanes: lanes, strata: strata };
 })();

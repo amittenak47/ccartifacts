@@ -1,0 +1,742 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Abiogenic Oil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../assets/widget.css">
+<link rel="stylesheet" href="../assets/theme.css">
+<link rel="stylesheet" href="../assets/transition.css">
+<link rel="expect" href="#page-ready" blocking="render">
+<style>
+/* Layout: one reading column in eleven parts, in the order the questions were asked, with a
+   sticky list of parts. Each part with a shape gets an instrument (routes, depth probe, loss
+   calculator, timescales, capping, scale, chain lengths, the lab loop, carbon-13 pairs). */
+:root{--mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace}
+body{padding-top:0}
+.page{max-width:780px}
+.hero{padding-top:28px}
+nav.parts{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;margin:24px -16px 0;padding:0 16px;background:var(--surface-0);border-bottom:1px solid var(--border)}
+@supports (backdrop-filter:blur(1px)){nav.parts{background:color-mix(in srgb,var(--surface-0) 84%,transparent);backdrop-filter:blur(10px)}}
+nav.parts ol{list-style:none;margin:0;padding:0;display:flex;gap:18px;overflow-x:auto;scrollbar-width:none}
+nav.parts ol::-webkit-scrollbar{display:none}
+nav.parts a{display:flex;gap:6px;align-items:baseline;white-space:nowrap;padding:12px 0 10px;border-bottom:2px solid transparent;font-size:13px;color:var(--text-secondary);text-decoration:none}
+nav.parts a span{font:500 11px var(--mono);color:var(--text-muted)}
+nav.parts a[aria-current="true"]{color:var(--text-accent);border-bottom-color:var(--text-accent)}
+nav.parts a:hover,nav.parts a:focus-visible{color:var(--text-primary);outline:none}
+section.part{padding-top:56px;scroll-margin-top:48px}
+.eyebrow{font:500 11px/1.4 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin:0 0 6px}
+h2{font-family:var(--font-serif);font-weight:400;font-size:30px;line-height:1.12;margin:0 0 10px;text-wrap:balance}
+h3{font-size:17px;font-weight:600;margin:26px 0 8px}
+.part p,.part li{max-width:66ch}
+.part p{margin:0 0 12px}
+.part ul,.part ol.plain{margin:0 0 12px;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.part li::marker{color:var(--text-accent)}
+.lead{font-size:18px;color:var(--text-primary)}
+.card{margin:14px 0}
+.tag{font:500 11px/1.5 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)}
+.note{font-size:13px;color:var(--text-muted);margin:8px 0 0}
+button[aria-pressed="true"]{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
+.seg{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;vertical-align:top;padding:9px 10px;border-bottom:1px solid var(--border)}
+th{font:500 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)}
+.tablewrap{overflow-x:auto}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:640px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.grid2 .card{margin:0}
+.grid2 h3{margin-top:0}
+.verdict{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}
+@media (max-width:640px){.verdict{grid-template-columns:minmax(0,1fr)}}
+.verdict div{border-left:3px solid var(--text-accent);padding:2px 0 2px 12px}
+.verdict div+div{border-left-color:var(--amber)}
+.verdict b{display:block;font-weight:600}
+.verdict span{color:var(--text-secondary);font-size:15px}
+.against li::marker{color:var(--amber)}
+
+/* Routes */
+.chain{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.chain li{position:relative;min-width:0;max-width:none}
+.chain li:not(:last-child)::after{content:"→";position:absolute;right:-11px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:12px}
+.chain button{width:100%;height:100%;text-align:left;padding:10px;border-radius:10px;background:var(--surface-1);display:flex;flex-direction:column;gap:4px}
+.chain button span{font:500 11px var(--mono);color:var(--text-muted)}
+.chain button b{font-weight:500;font-size:13px;line-height:1.3}
+.chain button[aria-current="step"]{border-color:var(--text-accent);background:var(--bg-accent)}
+.chain button[aria-current="step"] span{color:var(--text-accent)}
+@media (max-width:640px){.chain{grid-template-columns:minmax(0,1fr);gap:14px}.chain li:not(:last-child)::after{content:"↓";right:auto;left:16px;top:auto;bottom:-15px;transform:none}}
+.detail{margin-top:16px;border-top:1px solid var(--border);padding-top:14px}
+.detail h4{margin:0 0 4px;font-size:16px;font-weight:600}
+.detail p{color:var(--text-secondary)}
+.facts{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;font-size:14px;margin:12px 0 0}
+.facts dt{font:500 11px/1.9 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted)}
+.facts dd{margin:0}
+.step-nav{display:flex;gap:8px}
+.aside{margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--surface-1);font-size:14px;color:var(--text-secondary)}
+
+/* Instruments */
+.inst{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:18px;align-items:start}
+@media (max-width:640px){.inst{grid-template-columns:minmax(0,1fr)}}
+canvas{display:block;width:100%;max-width:100%}
+#probe{height:380px;touch-action:none;cursor:ns-resize;border-radius:8px}
+.read{margin:0;font:13px/1.6 var(--mono);font-variant-numeric:tabular-nums}
+.read dt{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-top:10px}
+.read dt:first-child{margin-top:0}
+.read dd{margin:0}
+.read .big{font:600 26px/1.15 var(--font-serif);color:var(--text-primary)}
+.read .zone b{display:block;font:600 15px var(--font-sans);color:var(--text-primary)}
+.read .zone span{font:14px/1.45 var(--font-sans);color:var(--text-secondary)}
+.ctl{display:grid;gap:4px;margin-top:12px}
+.ctl label{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--text-secondary)}
+.ctl output{font:500 13px var(--mono);color:var(--text-primary)}
+input[type=range]{width:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--text-secondary);margin-top:10px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.iso-legend i{border-radius:50%;border:1.5px solid var(--text-muted)}
+.iso-legend i.c13{background:var(--amber);border-color:var(--amber)}
+.iso-legend i.pair{border-color:var(--text-accent);border-width:2px}
+.count{font:13px/1.6 var(--mono);font-variant-numeric:tabular-nums;margin-top:8px}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+@media (max-width:640px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tiles div{border-top:3px solid var(--border-strong);padding-top:6px;font-size:13px;color:var(--text-secondary)}
+.tiles b{display:block;font:600 20px var(--mono);color:var(--text-primary)}
+
+/* Cards of examples */
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}
+@media (max-width:760px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:480px){.cards{grid-template-columns:minmax(0,1fr)}}
+.cards div{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--text-secondary)}
+.cards b{display:block;font-size:15px;color:var(--text-primary);margin-bottom:4px}
+
+/* The lab loop */
+.loop{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:34px 52px}
+.loop button{text-align:left;padding:12px 14px;border-radius:10px;background:var(--surface-1);display:flex;flex-direction:column;gap:4px;min-height:78px}
+.loop button span{font:500 11px var(--mono);color:var(--text-muted)}
+.loop button b{font-weight:500}
+.loop button[aria-current="step"]{border-color:var(--text-accent);background:var(--bg-accent)}
+.loop .ar{position:absolute;color:var(--text-muted);font-size:18px;font-style:normal;pointer-events:none}
+.loop .a1{left:50%;top:39px;transform:translate(-50%,-50%)}
+.loop .a2{right:25%;top:50%;transform:translate(50%,-50%)}
+.loop .a3{left:50%;bottom:39px;transform:translate(-50%,50%)}
+@media (max-width:560px){.loop{grid-template-columns:minmax(0,1fr);gap:10px}.loop .ar{display:none}.loop button[data-i="2"]{order:3}.loop button[data-i="3"]{order:4}}
+
+/* History rail */
+.rail{list-style:none;margin:0;padding:0;border-left:2px solid var(--border-strong);margin-left:6px}
+.rail li{position:relative;padding:0 0 16px 20px}
+.rail li::before{content:"";position:absolute;left:-7px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--surface-0);border:2px solid var(--text-accent)}
+.rail li.miss::before{border-color:var(--amber)}
+.rail time{display:block;font:500 12px var(--mono);color:var(--text-muted)}
+.sources ul{font-size:14px}
+.sources a{color:var(--text-accent)}
+</style>
+</head>
+<body>
+<main class="page">
+<div class="hero">
+  <a class="crumb" href="../index.html#abiogenic-oil">&larr; All artifacts</a>
+  <h1>Abiogenic Oil</h1>
+  <p class="lede">Abiogenic petroleum origin is the idea that most oil and gas came from non-living chemistry deep in the Earth, not from buried ancient organisms. As of 2026 the mainstream view hasn’t changed: abiotic hydrocarbons are real but minor, and the world’s oil is overwhelmingly biological. This page follows the questions that led on from there, ending with how factories already make abiogenic oil and where AI could help.</p>
+</div>
+
+<nav class="parts" aria-label="Parts"><ol id="partsNav"></ol></nav>
+
+<section class="part" id="idea" data-nav="The idea">
+  <p class="eyebrow">Part 1</p>
+  <h2>Abiogenic petroleum origin in 2026</h2>
+  <h3>The core claim</h3>
+  <p>The hypothesis says most of Earth’s petroleum and natural gas formed inorganically. Carbon in the mantle, as methane, carbonates or primordial material, is supposed to turn into heavier hydrocarbons under high pressure and heat. These migrate out of the mantle into the crust until they escape to the surface or are trapped by impermeable strata, forming reservoirs.</p>
+  <h3>How it’s supposed to work</h3>
+  <p>The most credible mechanism is serpentinization. Water reacts with iron- and magnesium-rich mantle rock (olivine) and releases hydrogen. That hydrogen can combine with CO₂ to form methane, through natural versions of the industrial Fischer–Tropsch process. Metals in the rock may then help link methane into longer chains. Lab work supports parts of this: diamond-anvil experiments have partially converted methane and inorganic carbonates into light hydrocarbons.</p>
+  <h3>Where it came from</h3>
+  <ol class="rail">
+    <li><time>1500s</time>People propose the first versions of the idea.</li>
+    <li><time>1800s</time>Humboldt, Mendeleev and Berthelot each propose versions.</li>
+    <li><time>1951</time>Soviet geologist Nikolai Kudryavtsev sets out the modern form. His Soviet school has little influence outside the USSR, because most of its research is published in Russian.</li>
+    <li><time>1979–1998</time>Astronomer Thomas Gold popularizes the idea in the West, arguing that fossil fuels are largely a myth.</li>
+    <li><time>1986</time>A Russian forecast map built on deep fault intersections; supporters later claim it predicted where giant Andean fields were found.</li>
+    <li class="miss"><time>Gold’s big test</time>Drilling Sweden’s Siljan Ring impact crater costs investors about $40 million. The hydrocarbons recovered come from the diesel-based drilling fluid.</li>
+  </ol>
+  <h3>The case for and against</h3>
+  <div class="grid2">
+    <div class="card"><h3>What supporters point to</h3><ul>
+      <li>Hydrocarbons exist on Titan, comets and meteorites, with no life involved.</li>
+      <li>Some oil sits in granite and other non-sedimentary rock, as in Vietnam’s Bạch Hổ field.</li>
+      <li>Trace metals in crude oil seem to resemble mantle chemistry.</li>
+      <li>Hydrocarbons have been found inside diamonds.</li>
+      <li>The 1986 Russian forecast map is claimed to have predicted the giant Andean fields.</li>
+    </ul></div>
+    <div class="card against"><h3>Why most geologists aren’t persuaded</h3><ul>
+      <li><b>Biomarkers.</b> Crude oil contains molecules from living things, such as porphyrins (related to chlorophyll), steranes and hopanoids.</li>
+      <li><b>Basement-rock oil.</b> Oil in granite or volcanic rock can come from nearby sedimentary source rock and migrate in.</li>
+      <li><b>The test failed.</b> The Siljan Ring well found only its own drilling fluid.</li>
+      <li><b>Source rocks add up.</b> Millions of analyzed source-rock samples account for the oil in sedimentary basins.</li>
+      <li><b>No confirmed abiotic oil field.</b> Commercial abiotic deposits could exist, but none has convincing evidence of abiotic origin.</li>
+    </ul></div>
+  </div>
+  <h3>Where things stand now</h3>
+  <p>Serious research has moved from “is all oil abiotic?” to “how much abiotic methane does the Earth make, and where?” At the Lost City hydrothermal field in the Atlantic, abiotic hydrocarbons form where ultramafic rock, water and moderate heat meet. They are mostly methane and a few small molecules, not crude oil.</p>
+  <p>The main challenge is telling abiotic and biological gas apart. Isotope methods can give ambiguous results, where a gas looks abiotic by one index and not by others. Newer techniques measure where rare carbon-13 atoms cluster inside a molecule; one found that abiotic ethane has fewer molecules with two carbon-13 atoms, which tells it apart from biotic ethane. Simulations still probe the deep chemistry: a 2025 study modeled hydrocarbons forming in supercritical fluids under upper-mantle conditions.</p>
+  <div class="card">
+    <div class="seg" id="isoSeg" role="group" aria-label="Pairing">
+      <button type="button" data-mode="random" aria-pressed="true">If carbon-13 lands at random</button>
+      <button type="button" data-mode="abiotic" aria-pressed="false">Abiotic ethane</button>
+    </div>
+    <canvas id="iso" aria-label="A grid of ethane molecules, each two carbon atoms, with carbon-13 atoms highlighted"></canvas>
+    <div class="legend iso-legend"><span><i></i>carbon-12</span><span><i class="c13"></i>carbon-13</span><span><i class="pair"></i>molecule with two carbon-13</span></div>
+    <div class="count" id="isoCount"></div>
+    <p class="note">Illustration: carbon-13 is about 1% of carbon in nature; here it is made far more common so the pairs show.</p>
+  </div>
+  <p>Interest has also grown because of naturally occurring hydrogen, sometimes called “gold” or “white” hydrogen. The same rock–water reactions that make abiotic methane also make hydrogen, which is now being explored as an energy resource.</p>
+  <div class="verdict">
+    <div><b>The modest version is mainstream</b><span>Rocks can make some hydrocarbons without life. This is now accepted geochemistry.</span></div>
+    <div><b>The strong version remains fringe</b><span>The claim that oil is abiotic and therefore effectively unlimited.</span></div>
+  </div>
+</section>
+
+<section class="part" id="stories" data-nav="Two stories">
+  <p class="eyebrow">Part 2</p>
+  <h2>Two stories about where oil comes from</h2>
+  <p>Most of the confusion comes from mixing up two stories. In the mainstream one, oil comes from tiny living things, mostly plankton and algae, not dinosaurs. In the abiogenic one, oil and gas form from carbon already deep inside the Earth; some versions say that carbon has been there since the Earth formed, about 4.5 billion years ago. Pick a route and step through it.</p>
+  <div class="card">
+    <div class="seg" id="routeSeg" role="group" aria-label="Route"></div>
+    <ol class="chain" id="chain"></ol>
+    <div class="detail" aria-live="polite">
+      <h4 id="stepTitle"></h4>
+      <p id="stepText"></p>
+      <div class="step-nav"><button type="button" id="prevStep">← Previous step</button><button type="button" id="nextStep">Next step →</button></div>
+      <dl class="facts"><dt>Makes</dt><dd id="routeOut"></dd><dt>Takes</dt><dd id="routeTime"></dd></dl>
+      <div class="aside" id="routeAside" hidden></div>
+    </div>
+  </div>
+  <p>In short: almost all oil comes from ancient sea life, cooked underground over millions of years. The abiogenic idea is real chemistry, but it explains only a small amount of natural gas, not the world’s oil.</p>
+</section>
+
+<section class="part" id="slow" data-nav="Why so slow">
+  <p class="eyebrow">Part 3</p>
+  <h2>Why it takes millions of years</h2>
+  <p>The Earth works slowly at every step, and three things add up. <b>Burial is slow:</b> new mud and sand pile up at a fraction of a millimeter a year in many places, about the thickness of a sheet of paper. <b>Heat comes with depth:</b> roughly 25 to 30°C per kilometer, and oil only starts forming around 60°C. <b>The cooking is gentle:</b> at 60 to 120°C the reactions are slow, like a slow cooker on its lowest setting. Drag down through a basin.</p>
+  <div class="card inst">
+    <div>
+      <canvas id="probe" aria-label="Cross-section of a sedimentary basin from the surface to 8 km, with the oil window between 2 and 4 km"></canvas>
+      <div class="ctl"><label for="depth">Depth <output id="depthOut"></output></label><input type="range" id="depth" min="0" max="8" step="0.1" value="3"></div>
+    </div>
+    <dl class="read">
+      <dt>Temperature</dt><dd id="rTemp"></dd>
+      <dt>Rock pressure</dt><dd id="rPres"></dd>
+      <dt>Time to bury this deep</dt><dd id="rTime"></dd>
+      <dt>What happens</dt><dd class="zone" id="rZone"></dd>
+    </dl>
+  </div>
+  <p>Heat and time trade off against each other. In a lab, heating organic-rich rock to around 300°C makes an oil-like liquid in a few days. Nature uses low heat, so it needs lots of time. It can’t run too hot either: above roughly 150°C oil breaks down into natural gas. After it forms, oil still has to seep through rock and collect in a trap. That’s why we can burn in a few decades what took tens of millions of years to make.</p>
+</section>
+
+<section class="part" id="numbers" data-nav="The recipe">
+  <p class="eyebrow">Part 4</p>
+  <h2>The recipe in numbers</h2>
+  <p>These are rough ranges; every basin is different.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Temperature</th><th>What happens</th></tr></thead>
+    <tbody>
+      <tr><td>Below ~60°C</td><td>Not much. Organic matter slowly turns into kerogen.</td></tr>
+      <tr><td>~60–120°C</td><td>The oil window, where most oil forms. At 25–30°C per km, it sits about 2–4 km deep.</td></tr>
+      <tr><td>~120–200°C+</td><td>Oil breaks down into natural gas.</td></tr>
+      <tr><td>Much hotter</td><td>Even the gas is destroyed, leaving mostly carbon (graphite).</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>Pressure matters less than people think.</b> At 3 km down, the rock above presses with roughly 700–800 times surface air pressure. Heat and time do the chemistry; pressure mostly squeezes the oil out of the rock it formed in, so it can migrate and collect.</p>
+  <h3>Where the plankton goes</h3>
+  <p>Normal seafloor mud is under 1% organic material; a good source rock needs about 2–10%, which only happens with lots of plankton and little oxygen at the bottom. After that, losses multiply at every step. Set each one within its usual range.</p>
+  <div class="card inst">
+    <div>
+      <canvas id="funnel" aria-label="Bars on a log scale showing how much plankton carbon survives each step"></canvas>
+      <div class="ctl"><label for="fPres">Buried and preserved (under about 1%) <output id="fPresOut"></output></label><input type="range" id="fPres" min="0.1" max="1" step="0.1" value="0.5"></div>
+      <div class="ctl"><label for="fOil">Of that, kerogen that can become oil (a third to a half) <output id="fOilOut"></output></label><input type="range" id="fOil" min="33" max="50" step="1" value="40"></div>
+      <div class="ctl"><label for="fTrap">Of that, oil that ends up in a drillable field (a few percent) <output id="fTrapOut"></output></label><input type="range" id="fTrap" min="1" max="5" step="0.5" value="3"></div>
+    </div>
+    <dl class="read">
+      <dt>Reaches a drillable field</dt><dd class="big" id="fShare"></dd><dd id="fOneIn"></dd>
+      <dt>Per gallon of gasoline</dt><dd>about 90 tonnes of ancient plant and plankton matter, roughly 15 elephants (Jeffrey Dukes, 2003)</dd>
+    </dl>
+  </div>
+  <p>Multiply those losses together and almost nothing makes it through: well under 1 in 10,000 parts of the original carbon ends up as fuel. Oil needs lots of plankton, an oxygen-poor seafloor, burial to 2–4 km, 60–120°C, millions of years and a rock trap. Miss any one and there is no oil field.</p>
+</section>
+
+<section class="part" id="kerogen" data-nav="What becomes oil">
+  <p class="eyebrow">Part 5</p>
+  <h2>What turns into oil</h2>
+  <p>Living things are built mostly from four kinds of molecules, and each has a different fate after burial.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Ingredient</th><th>Found in</th><th>What happens to it</th></tr></thead>
+    <tbody>
+      <tr><td><b>Carbohydrates</b> (sugars, starch, cellulose)</td><td>All life, especially plants</td><td>Mostly eaten by microbes early. Woody cellulose that survives leans toward gas and coal.</td></tr>
+      <tr><td><b>Proteins</b></td><td>All life</td><td>Mostly eaten quickly. Small leftovers fold into kerogen.</td></tr>
+      <tr><td><b>Lipids</b> (fats, oils, waxes)</td><td>Plankton, algae, bacteria, spores, leaf coatings</td><td>The key ingredient. Tough and hard to digest, so they survive.</td></tr>
+      <tr><td><b>Lignin</b> (the stiff stuff in wood)</td><td>Land plants only</td><td>Resistant but carbon-heavy and hydrogen-poor, so it makes gas and coal, not oil.</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>Why lipids matter most.</b> Oil is chains of carbon covered in hydrogen, and lipids already look like that, with little oxygen. Sugars and proteins carry lots of oxygen and nitrogen that must be stripped away. That’s why plankton and algae, full of fats and oils, make the best oil, while woody material makes coal and gas.</p>
+  <p><b>How it becomes kerogen.</b> In the first few meters of mud, bacteria eat the easy material. What survives is naturally tough material (waxy algae walls, spore and pollen coatings, leaf cuticles) and broken fragments that cross-link into large tangled molecules. Sulfur from seawater often binds them, a bit like sulfur hardening rubber. Over thousands to millions of years this becomes kerogen: a dark, insoluble, giant messy network of carbon rings and chains.</p>
+  <div class="cards">
+    <div><b>Type I</b>Lake algae. Very hydrogen-rich; the best oil producer.</div>
+    <div><b>Type II</b>Marine plankton. The source of most of the world’s oil.</div>
+    <div><b>Type III</b>Land plants. Mostly gas and coal.</div>
+    <div><b>Type IV</b>Burned or heavily oxidized material. Produces almost nothing.</div>
+  </div>
+  <p><b>Fingerprints that survive.</b> Chlorophyll leaves porphyrins, cholesterol-like molecules become steranes, and bacterial membranes leave hopanes. These biomarkers are among the strongest evidence that oil comes from life, and the biggest problem for the abiogenic idea.</p>
+</section>
+
+<section class="part" id="networks" data-nav="Carbon networks">
+  <p class="eyebrow">Part 6</p>
+  <h2>Other ways carbon networks form</h2>
+  <p>Messy, cross-linked carbon networks are common; kerogen is just the slow, underground version. How long each one takes:</p>
+  <div class="card"><canvas id="times" aria-label="How long each carbon network takes to form, on a log scale from minutes to tens of millions of years"></canvas>
+  <div class="legend"><span><i style="background:var(--text-accent)"></i>in nature</span><span><i style="background:var(--amber)"></i>human-made</span></div>
+  <p class="note">Ranges as described in the conversation; approximate.</p></div>
+  <div class="cards">
+    <div><b>Soil</b>Dead leaves and roots break down into humus, a similar tangle, in years to centuries.</div>
+    <div><b>Coal</b>Buried swamp plants go from peat to coal by much the same process, ending with more carbon rings and less hydrogen.</div>
+    <div><b>Fire</b>Burning plants without enough oxygen leaves charcoal and soot in minutes.</div>
+    <div><b>Space</b>Carbon-rich meteorites hold kerogen-like material, and on Titan sunlight builds brownish tholins, with no life involved.</div>
+    <div><b>Your kitchen</b>Browning toast, roasting coffee and caramelizing sugar make melanoidins, fast and hot.</div>
+    <div><b>Oil shale</b>Heating oil shale to around 500°C forces its kerogen to release oil, in a furnace instead of millions of years.</div>
+  </div>
+  <h3>Can the fast methods make oil?</h3>
+  <ul>
+    <li><b>Hydrothermal liquefaction (HTL)</b> is the closest thing to fast-forward oil. A 2026 test at a US national lab ran wet waste, algae and sewage sludge at about 350°C and roughly 200 times atmospheric pressure. The biocrude was 76–80% carbon, with about as much energy per kilogram as petroleum fuels. Here pressure matters: it keeps the water liquid at that heat.</li>
+    <li><b>Pyrolysis</b> heats plastic or plant waste without oxygen; oil yields from plastic usually run around 70–80%.</li>
+    <li><b>Hydrothermal carbonization</b> at 180–250°C makes a coal-like solid, not oil.</li>
+    <li><b>Bakelite and resins</b> are the opposite: a carbon network built to keep, not broken down into fuel.</li>
+  </ul>
+  <h3>Why we aren’t making all our oil this way</h3>
+  <ol class="plain">
+    <li><b>Scale.</b> The world burns roughly 100 million barrels a day. One estimate found a person’s sewage yields only two to three gallons of biocrude a year.</li>
+    <li><b>Quality.</b> Nitrogen is hard to remove from algae biocrude, and chlorine in plastic oil corrodes refinery equipment. Cleaning it up usually takes hydrogen.</li>
+    <li><b>Size and reliability.</b> Early plastic-oil plants handle 10–50 thousand tonnes a year, against 500–1,000 thousand for a typical refinery unit, and projects have been delayed or cancelled.</li>
+    <li><b>Still early.</b> A June 2026 IEA report noted several HTL demonstration plants and the first commercial ones. Near Vancouver, a sewage-to-biocrude demonstration was due to start in 2026.</li>
+  </ol>
+  <p>These methods are best thought of as turning waste back into fuel, not as a replacement for oil fields.</p>
+  <h3>Why Earth doesn’t have tholins</h3>
+  <ul>
+    <li><b>Oxygen.</b> Our air is about 21% oxygen, which turns methane and its fragments into CO₂ and water before they build up. Titan has no free oxygen.</li>
+    <li><b>Too little methane.</b> Earth’s air is about 0.0002% methane; Titan’s is a few percent.</li>
+    <li><b>Shielding.</b> Oxygen and ozone absorb much of the ultraviolet that splits methane.</li>
+    <li><b>Nothing preserves them.</b> On Earth, microbes, water and oxygen break down loose organic gunk. Titan is about −180°C and lifeless, so tholins pile up, even forming dunes.</li>
+  </ul>
+  <p>Earth may once have had them: before oxygen built up, more than 2.4 billion years ago, there is evidence of an orange organic haze like Titan’s. Labs make tholins in sealed chambers, and Carl Sagan named them in 1979, from a Greek word meaning “muddy.”</p>
+</section>
+
+<section class="part" id="plasma" data-nav="Space and plasma">
+  <p class="eyebrow">Part 7</p>
+  <h2>Space chemistry and plasma</h2>
+  <p>Space is too cold for baking: Titan’s surface is around −180°C, and interstellar clouds are colder. Bonds are broken instead by <b>ultraviolet sunlight</b>, which can split methane directly, and by <b>charged particles</b>: on Titan, electrons and ions from Saturn’s magnetic field; elsewhere, cosmic rays. Titan’s partly ionized upper atmosphere is a natural, very thin cold plasma, and the Cassini spacecraft found large charged molecules there, where tholins start to form.</p>
+  <p>Labs copy this with electricity: running an electrical discharge (a cold plasma) through a nitrogen–methane mix makes tholins. The 1952 Miller–Urey experiment did something similar: sparks through methane, ammonia, hydrogen and water produced amino acids.</p>
+  <div class="grid2">
+    <div class="card"><h3>Titan: small becomes big</h3><p>Methane and nitrogen are smashed, and the fragments stick together into bigger and bigger gunk.</p></div>
+    <div class="card"><h3>Kerogen cracking: big becomes small</h3><p>Broken pieces need hydrogen to cap them into liquid fuel, or they recombine into soot and coke.</p></div>
+  </div>
+  <p><b>A caution.</b> Plasma and electrochemistry can break carbon bonds, and labs are testing plasma for upgrading heavy oil and methane. But the electric methods actually used on oil shale, like Shell’s in-situ heaters and ExxonMobil’s Electrofrac tests, work by heating the rock. Pulsed-power tools in oil wells crack rock with shock waves, and “electroporation” means opening pores in cell membranes, not snapping bonds in kerogen. Creating plasma deep inside solid rock is extremely hard and hasn’t been done at field scale.</p>
+</section>
+
+<section class="part" id="cracking" data-nav="Cracking">
+  <p class="eyebrow">Part 8</p>
+  <h2>Cracking: why broken ends need hydrogen</h2>
+  <p>Cracking means breaking big molecules into smaller ones. When a carbon–carbon bond breaks, each end is left sticky, with an unpaired electron; chemists call these pieces radicals. A hydrogen atom can cap the end, making a stable small molecule like those in gasoline or diesel. Without hydrogen, the sticky pieces grab each other, shed more hydrogen and fuse into nearly pure carbon: fine black soot, or hard porous coke, like the burnt crust in a pan.</p>
+  <div class="card">
+    <canvas id="caps" aria-label="A carbon chain snapped into pieces; capped pieces become fuel molecules, the rest fuse into a lump of coke"></canvas>
+    <div class="ctl"><label for="hyd">Hydrogen available for the broken ends <output id="hydOut"></output></label><input type="range" id="hyd" min="0" max="100" step="10" value="60"></div>
+    <div class="count" id="capsCount"></div>
+    <p class="note">Illustration of the Lego picture: snap a chain of bricks apart; with caps for the ends you get neat short pieces, without them the loose ends stick into a jumbled lump.</p>
+  </div>
+  <p><b>The hydrogen problem.</b> Liquid fuel has about two hydrogen atoms per carbon, and kerogen has less. So some carbon gives up its hydrogen and ends up as coke so the rest can become oil; underground, a carbon-rich leftover stays in the rock. Refineries either add hydrogen gas (hydrocracking) or deliberately reject carbon as coke (coking). Plasma makes it worse, because it knocks hydrogen off molecules too.</p>
+  <div class="grid2">
+    <div class="card"><h3>Hydrocracking makes</h3><ul>
+      <li>Naphtha, reshaped into gasoline in a reformer</li>
+      <li>Jet fuel and kerosene</li>
+      <li>Diesel</li>
+    </ul><p class="note">Very clean, since the hydrogen also strips out sulfur and nitrogen. Most of that hydrogen is made from natural gas, which releases CO₂.</p></div>
+    <div class="card"><h3>Coking makes</h3><ul>
+      <li>Vapors: gas, naphtha and gas oil, usually cleaned up in a hydrocracker</li>
+      <li>High-sulfur petcoke, burned in power plants and cement kilns; very CO₂-heavy</li>
+      <li>Cleaner coke, made into carbon blocks for smelting aluminum</li>
+      <li>Needle coke, made into graphite electrodes for steel and synthetic graphite for lithium-ion battery anodes</li>
+    </ul></div>
+  </div>
+  <p>So the waste carbon from cracking oil can end up in your phone battery.</p>
+</section>
+
+<section class="part" id="bonds" data-nav="AI and bonds">
+  <p class="eyebrow">Part 9</p>
+  <h2>Can a large AI model break specific bonds?</h2>
+  <p>Not directly: AI is software and can’t touch molecules. The obvious idea, pumping energy into one bond with a precisely tuned laser, was tried for decades. In big molecules the energy spreads to all the other bonds within trillionths of a second, so the molecule breaks at its weakest point instead. It only works reliably in very small molecules.</p>
+  <p><b>What works is catalysts.</b> A catalyst lowers the energy barrier for one particular bond and leaves the others alone. Zeolites, minerals full of molecule-sized pores, crack oil molecules by shape and are widely used in refineries. Enzymes are extremely precise; some microbes break down crude oil or the lignin in wood.</p>
+  <ul>
+    <li><b>Designing catalysts.</b> Machine learning screens huge numbers of materials and predicts which bonds they weaken, far faster than physics simulation. The Open Catalyst Project, started by Meta and Carnegie Mellon, built large datasets for this.</li>
+    <li><b>Faster simulations.</b> Models trained on quantum chemistry simulate reactions thousands of times faster, even at deep-underground heat and pressure.</li>
+    <li><b>Designing enzymes.</b> Protein-design tools can engineer enzymes to cut particular bonds.</li>
+    <li><b>Self-driving labs.</b> AI chooses the next experiment, robots run it, and the loop repeats.</li>
+  </ul>
+  <p><b>The limits for kerogen.</b> It isn’t one molecule with one bond to target but a messy network that varies from rock to rock, locked in stone where catalysts can’t easily reach. AI is more likely to help upgrade oil after extraction, or turn plastic and sewage into fuel. AI won’t be the scissors, but it could help design much better scissors.</p>
+</section>
+
+<section class="part" id="factory" data-nav="Factory oil">
+  <p class="eyebrow">Part 10</p>
+  <h2>Abiogenic oil from factories, and where AI fits</h2>
+  <p class="lead">Making oil without millions of years is already possible. Synthetic fuel is literally abiogenic oil, made from CO₂, water and energy with no living things involved. The open question is whether it can be made cheap and scalable enough to matter.</p>
+  <p>The recipe is the serpentinization chemistry done in a factory: split water into hydrogen using electricity, combine the hydrogen with CO₂ into syngas, and run that through a Fischer–Tropsch reactor, which links carbon into chains and makes a synthetic crude (“syncrude”). INERATEC’s plant near Frankfurt does this at commercial scale. Synhelion in Germany uses concentrated solar heat instead of electricity, and its syncrude can go to any normal refinery. Nature is slow because it uses low heat and no catalysts; factories use high heat, pressure and catalysts, and get oil in hours.</p>
+  <h3>How far from replacing oil fields</h3>
+  <div class="card inst">
+    <div>
+      <canvas id="scale" aria-label="Log-scale bars comparing one plant's output with world oil use"></canvas>
+      <div class="ctl"><label for="share">Share of world oil to replace <output id="shareOut"></output></label><input type="range" id="share" min="1" max="100" step="1" value="10"></div>
+    </div>
+    <dl class="read">
+      <dt>Plants needed</dt><dd class="big" id="plants"></dd><dd>the size of INERATEC’s Frankfurt plant, which targets about 3,500 tonnes a year</dd>
+      <dt>World oil use</dt><dd>around 100 million barrels a day</dd>
+    </dl>
+  </div>
+  <p class="note">Approximate: 1 barrel of crude ≈ 0.136 tonnes, so world use is about 5 billion tonnes a year.</p>
+  <h3>What’s holding it back</h3>
+  <ul>
+    <li><b>Hydrogen is expensive,</b> and electrolyzers often rely on rare metals like iridium and platinum.</li>
+    <li><b>Poor selectivity.</b> Fischer–Tropsch makes a broad mix of chain lengths, from gas to wax, not just the jet fuel or diesel you want.</li>
+    <li><b>Catalysts wear out</b> and lose activity over time.</li>
+    <li><b>Energy losses.</b> Every step wastes some energy.</li>
+  </ul>
+  <div class="card">
+    <canvas id="ft" aria-label="Share of Fischer–Tropsch output by carbon chain length"></canvas>
+    <div class="ctl"><label for="alpha">Chain growth: chance each chain adds one more carbon <output id="alphaOut"></output></label><input type="range" id="alpha" min="0.7" max="0.95" step="0.01" value="0.85"></div>
+    <div class="tiles" id="ftTiles"></div>
+    <p class="note">The textbook Anderson–Schulz–Flory model of Fischer–Tropsch chain growth, with approximate fuel ranges. Turning the dial only shifts the mix: jet and diesel never pass about 30% of the output.</p>
+  </div>
+  <h3>How a frontier model would actually fit in</h3>
+  <p>A multi-trillion-parameter model wouldn’t know the answer and pass it down: it contains no ground-truth chemistry, which has to come from physics simulations and real experiments. Its realistic role is research director and toolmaker for a stack of smaller, specialized models.</p>
+  <div class="card">
+    <div class="loop" id="loop">
+      <button type="button" data-i="0"><span>1</span><b>Read and organize everything</b></button>
+      <button type="button" data-i="1"><span>2</span><b>Generate training data with physics</b></button>
+      <button type="button" data-i="3"><span>4</span><b>Close the loop with real labs</b></button>
+      <button type="button" data-i="2"><span>3</span><b>Train specialist models</b></button>
+      <i class="ar a1" aria-hidden="true">→</i><i class="ar a2" aria-hidden="true">↓</i><i class="ar a3" aria-hidden="true">⇄</i>
+    </div>
+    <div class="detail" aria-live="polite"><h4 id="loopTitle"></h4><div id="loopText"></div></div>
+  </div>
+  <p>Early versions exist. In 2026, researchers in Japan trained an AI agent on a large experimental catalysis database and found a general design rule for copper catalysts that turn CO₂ into multi-carbon fuels. Another 2026 study used retrieval-augmented GPT-4 to propose over 250 CO₂-reduction catalyst candidates, 82% predicted stable. The scaffolding is being built, but none of it has yet produced a breakthrough fuel plant.</p>
+  <h3>The most abiogenic version</h3>
+  <p>ARPA-E, the US energy agency, funds projects to stimulate serpentinization underground, cracking rock and injecting fluids to speed up natural hydrogen production. One Penn State project plans to inject carbon-rich solutions into peridotite to trigger and sustain the reaction. An AI-driven version could model which rock formations react fastest, design the injection fluids and catalysts, and feed the hydrogen into Fischer–Tropsch on the surface: rock and water to hydrogen to synthetic crude, in years instead of millions of years.</p>
+  <h3>Limits no AI can get around</h3>
+  <ul>
+    <li><b>Thermodynamics.</b> Making fuel from CO₂ and water takes at least the energy burning it releases, and in practice considerably more. Synthetic oil always needs a large, cheap, clean energy source.</li>
+    <li><b>The lab bottleneck.</b> AI can propose a million catalysts a day, but making and testing them takes physical time.</li>
+    <li><b>Scale and cost.</b> Even a perfect catalyst needs factories, electrolyzers and power plants built at enormous scale.</li>
+  </ul>
+  <p>So a frontier model won’t make oil. It could cut the 10–20 year cycle of catalyst discovery to a few years, which might help synthetic oil compete on price.</p>
+</section>
+
+<section class="part" id="picture" data-nav="Big picture">
+  <p class="eyebrow">Part 11</p>
+  <h2>The big picture</h2>
+  <ul>
+    <li>Nearly all oil comes from ancient plankton, buried 2–4 km deep and cooked at 60–120°C over millions of years.</li>
+    <li>It takes so long because burial is slow, heat only comes with depth, and the cooking is gentle.</li>
+    <li>Only a tiny fraction survives: about 90 tonnes of ancient biomass per gallon of gasoline.</li>
+    <li>Abiotic hydrocarbons are real, but mostly small amounts of methane; no major oil field has been shown to be abiogenic.</li>
+    <li>Nature’s slowness isn’t a chemistry limit. Factories make oil in minutes to hours using heat, pressure and catalysts.</li>
+    <li>AI could speed up catalyst discovery, but energy, physical testing and scale still set the pace.</li>
+  </ul>
+</section>
+
+<section class="part sources" id="sources" data-nav="Sources">
+  <h2>Sources</h2>
+  <ul>
+    <li><a href="https://en.wikipedia.org/wiki/Abiogenic_petroleum_origin">Abiogenic petroleum origin</a>, Wikipedia</li>
+    <li><a href="https://arxiv.org/pdf/2506.13350">Formation of abiogenic hydrocarbons in supercritical fluids under Earth’s upper mantle conditions</a>, arXiv 2025</li>
+    <li><a href="https://goldschmidtabstracts.info/2024/24583.pdf">Formation mechanisms for abiotic hydrocarbons</a>, Goldschmidt 2024</li>
+    <li><a href="https://archimer.ifremer.fr/doc/00796/90766/96376.pdf">Low 13C-13C abundances in abiotic ethane</a>, Nature Communications 2022</li>
+    <li><a href="https://www.pnnl.gov/publications/performance-analysis-engineering-scale-hydrothermal-liquefaction-system">Performance analysis of an engineering-scale HTL system</a>, PNNL 2026</li>
+    <li><a href="https://task34.ieabioenergy.com/wp-content/uploads/sites/3/2026/06/Report-2026-Commercial-facilities.pdf">Commercial status of direct thermochemical liquefaction</a>, IEA Bioenergy, June 2026</li>
+    <li><a href="https://pubs.rsc.org/en/content/articlepdf/2026/su/d5su00647c">Wet waste HTL with different biocrude upgrading strategies</a>, RSC Sustainability 2026</li>
+    <li><a href="https://www.accesswater.org/publications/proceedings/-10116839/innovation-and-business-case-for-hydrothermal-liquefaction-as-a-solids-management-solution">HTL business case</a>, Access Water</li>
+    <li><a href="https://singularityhub.com/2016/12/18/canadas-building-a-plant-that-will-make-fuel-out-of-poop/">Canada’s building a plant that will make fuel out of poop</a>, Singularity Hub</li>
+    <li><a href="https://www.digitalrefining.com/article/1003208/upgrading-pyrolysis-oil-for-greater-plastic-circularity-ertc-202">Upgrading pyrolysis oil for greater plastic circularity</a>, Digital Refining</li>
+    <li><a href="https://luxresearchinc.com/blog/2024-is-the-year-the-pyrolysis-bubble-bursts/">2024 is the year the pyrolysis bubble bursts</a>, Lux Research</li>
+    <li><a href="https://www.offgridenergyindependence.com/articles/31249/future-of-pyrolysis-market-in-light-of-a-changing-regulatory-landscape">Future of pyrolysis market</a>, IDTechEx</li>
+    <li><a href="https://www.kopernikus-projekte.de/en/projects/p2x/efuels">Powering the Future: Frankfurt launches groundbreaking e-fuels plant</a>, Kopernikus P2X</li>
+    <li><a href="https://www.adac.de/verkehr/tanken-kraftstoff-antrieb/interview-e-fuels-pilotanlage/">“2026 sind E-Fuels marktreif”</a>, ADAC</li>
+    <li><a href="https://www.energyintel.com/00000190-7cc8-d424-abb4-ffe87d7a0000">Solar SAF first in Germany</a>, Energy Intelligence</li>
+    <li><a href="https://www.wpi-aimr.tohoku.ac.jp/en/achievements/press/2026/20260326_002166.html">AI agent accelerates catalyst discovery for sustainable fuel development</a>, Tohoku University 2026</li>
+    <li><a href="https://arxiv.org/abs/2603.15712">LLM-driven discovery of high-entropy catalysts via retrieval-augmented generation</a>, arXiv 2026</li>
+    <li><a href="https://www.psu.edu/news/earth-and-mineral-sciences/story/11m-arpa-e-award-fund-project-exploring-potential-geologic">$1.1M ARPA-E award to fund project exploring potential of geologic hydrogen</a>, Penn State</li>
+    <li><a href="https://arpa-e.energy.gov/sites/default/files/2025-01/Project%20Descriptions_GeologicHydrogen.pdf">Geologic hydrogen project descriptions</a>, ARPA-E</li>
+  </ul>
+  <p class="note">Burial rates, temperature gradients, pressures, kerogen yields and the 90-tonnes-per-gallon estimate (Dukes, 2003) are approximate, from general geology references rather than the pages above.</p>
+</section>
+</main>
+
+<script>
+(function(){
+const root=document.documentElement,reduce=matchMedia('(prefers-reduced-motion: reduce)');
+const tok=n=>getComputedStyle(root).getPropertyValue(n).trim();
+const $=s=>document.querySelector(s);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const mono=()=>tok('--mono')||'monospace',sans=()=>tok('--font-sans')||'sans-serif';
+function prep(cv,h){
+  const d=Math.min(devicePixelRatio||1,2),w=cv.clientWidth||600;
+  cv.style.height=h+'px';
+  if(cv.width!==Math.round(w*d)||cv.height!==Math.round(h*d)){cv.width=Math.round(w*d);cv.height=Math.round(h*d);}
+  const c=cv.getContext('2d');c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,w,h);return[c,w,h];
+}
+const fmt=n=>n>=1e9?(n/1e9).toFixed(n>=1e10?0:1)+' billion':n>=1e6?(n/1e6).toFixed(n>=1e7?0:1)+' million':n>=1e4?Math.round(n/1000).toLocaleString()+' thousand':Math.round(n).toLocaleString();
+
+/* ---------- parts list: built from the sections, current part underlined ---------- */
+const parts=[...document.querySelectorAll('section.part[data-nav]')],nav=$('#partsNav');
+nav.innerHTML=parts.map((s,i)=>`<li><a href="#${s.id}">${s.id==='sources'?'':`<span>${i+1}</span>`}${s.dataset.nav}</a></li>`).join('');
+const links=[...nav.querySelectorAll('a')];let curPart=-2;
+function spy(){
+  let on=-1;parts.forEach((s,i)=>{if(s.getBoundingClientRect().top<innerHeight*0.3)on=i;});
+  if(on===curPart)return;curPart=on;
+  links.forEach((a,i)=>i===on?a.setAttribute('aria-current','true'):a.removeAttribute('aria-current'));
+  const a=links[Math.max(0,on)];nav.scrollTo({left:on<0?0:a.parentElement.offsetLeft-nav.clientWidth/2+a.offsetWidth/2,behavior:reduce.matches?'auto':'smooth'});
+}
+addEventListener('scroll',()=>requestAnimationFrame(spy),{passive:true});spy();
+
+/* ---------- routes ---------- */
+const ROUTES={
+  life:{name:'From life',out:'Crude oil: long carbon chains that still carry molecules from living things.',time:'Millions of years, usually tens of millions. Much of today’s oil came from life that died 65 to 250 million years ago.',
+    steps:[['Death and sinking','Plankton and algae die and sink to the bottom of seas or lakes, where there’s little oxygen, so they don’t fully rot.'],
+      ['Burial','Layers of mud and sand bury them, deeper and deeper over time.'],
+      ['Kerogen','The buried material turns into a waxy substance called kerogen.'],
+      ['Cooking','A few kilometers down, 60–120°C slowly cooks the kerogen into oil and gas. Geologists call this depth range the oil window.'],
+      ['Trapping','The oil seeps upward until it is trapped under rock it can’t pass through. That trapped pool is what oil companies drill into.']]},
+  claim:{name:'The abiogenic claim',out:'Claimed: the world’s oil and gas deposits. No field has been confirmed as abiotic.',time:'Some versions say the carbon has been there since the Earth formed, about 4.5 billion years ago.',
+    aside:'Lab support for parts of this: diamond-anvil experiments have partially converted methane and inorganic carbonates into light hydrocarbons.',
+    steps:[['Mantle carbon','Carbon in the mantle, as methane, carbonates or primordial material.'],
+      ['Heat and pressure','High pressure and heat are supposed to turn it into heavier hydrocarbons.'],
+      ['Rising','The hydrocarbons migrate out of the mantle into the crust.'],
+      ['Trapped','Impermeable strata trap them, or they escape to the surface.'],
+      ['Reservoir','The trapped hydrocarbons form petroleum reservoirs.']]},
+  rock:{name:'From rock, as it happens',out:'Mostly methane and a few small molecules, in small amounts. Not crude oil.',time:'Continuously, at hot undersea vents; it isn’t stuck on a million-year timescale.',
+    steps:[['Mantle rock','Olivine, an iron- and magnesium-rich rock from the mantle.'],
+      ['Water meets rock','Water reacts with the olivine: serpentinization.'],
+      ['Hydrogen','The reaction releases hydrogen, sometimes called “gold” or “white” hydrogen.'],
+      ['Hydrogen + CO₂','The hydrogen combines with CO₂ into methane, through natural versions of the Fischer–Tropsch process. Metals in the rock may help link methane into longer chains.'],
+      ['Small hydrocarbons','At the Lost City hydrothermal field in the Atlantic, ultramafic rock, water and moderate heat make methane and a few small molecules.']]},
+  factory:{name:'From air and water',out:'Synthetic crude (“syncrude”) that any normal refinery can process.',time:'Hours, using high heat, pressure and catalysts.',
+    aside:'Making fuel from CO₂ and water takes at least as much energy as burning it releases, and in practice considerably more (Part 10).',
+    steps:[['Energy','Electricity, or concentrated solar heat as at Synhelion in Germany.'],
+      ['Split water','Water is split into hydrogen.'],
+      ['Add CO₂','The hydrogen is combined with CO₂ into syngas.'],
+      ['Fischer–Tropsch','The reactor links carbon into chains.'],
+      ['Syncrude','INERATEC’s plant near Frankfurt makes it at commercial scale.']]}
+};
+let route='life',step=0;
+const seg=$('#routeSeg'),chain=$('#chain');
+seg.innerHTML=Object.entries(ROUTES).map(([k,r])=>`<button type="button" data-route="${k}" aria-pressed="${k===route}">${r.name}</button>`).join('');
+seg.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;route=b.dataset.route;step=0;renderRoute();});
+chain.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;step=+b.dataset.i;renderStep();});
+$('#prevStep').onclick=()=>{step=Math.max(0,step-1);renderStep();};
+$('#nextStep').onclick=()=>{step=Math.min(4,step+1);renderStep();};
+function renderRoute(){
+  const r=ROUTES[route];
+  seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.route===route));
+  chain.innerHTML=r.steps.map((s,i)=>`<li><button type="button" data-i="${i}"><span>${i+1}</span><b>${s[0]}</b></button></li>`).join('');
+  $('#routeOut').textContent=r.out;$('#routeTime').textContent=r.time;
+  const a=$('#routeAside');a.hidden=!r.aside;a.textContent=r.aside||'';renderStep();
+}
+function renderStep(){
+  const s=ROUTES[route].steps[step];
+  chain.querySelectorAll('button').forEach(b=>+b.dataset.i===step?b.setAttribute('aria-current','step'):b.removeAttribute('aria-current'));
+  $('#stepTitle').textContent=`${step+1}. ${s[0]}`;$('#stepText').textContent=s[1];
+  $('#prevStep').disabled=step===0;$('#nextStep').disabled=step===4;
+}
+renderRoute();
+
+/* ---------- depth probe ---------- */
+const probe=$('#probe'),depthIn=$('#depth'),MAXD=8,TOP=28,BOT=14;
+function zone(d){
+  if(d<2)return['Kerogen forming','Not much happens; organic matter slowly turns into kerogen.'];
+  if(d<=4)return['Oil window','Kerogen cooks into oil. Most oil forms here.'];
+  if(d<7)return['Gas zone','Too hot for oil: it breaks down into natural gas.'];
+  return['Much hotter','Even the gas is destroyed, leaving mostly graphite.'];
+}
+function drawProbe(){
+  const[c,w,h]=prep(probe,380),d=+depthIn.value,y=k=>TOP+(h-TOP-BOT)*k/MAXD;
+  const ink=tok('--text-primary'),muted=tok('--text-secondary'),amber=tok('--amber'),violet=tok('--violet'),acc=tok('--text-accent');
+  c.fillStyle=tok('--surface-1');c.fillRect(0,0,w,TOP);
+  for(let k=0;k<MAXD;k+=0.5){c.fillStyle=k%1?tok('--surface-2'):tok('--surface-1');c.fillRect(0,y(k),w,y(k+0.5)-y(k));}
+  const band=(a,b,col,al)=>{c.globalAlpha=al;c.fillStyle=col;c.fillRect(0,y(a),w,y(b)-y(a));c.globalAlpha=1;};
+  band(2,4,amber,0.3);band(4,7,violet,0.16);band(7,MAXD,muted,0.14);
+  c.strokeStyle=tok('--border-strong');c.lineWidth=1;
+  for(let k=0.5;k<MAXD;k+=0.5){c.beginPath();for(let x=0;x<=w;x+=8){const yy=y(k)+Math.sin(x/70+k*2.3)*2.2;x?c.lineTo(x,yy):c.moveTo(x,yy);}c.stroke();}
+  c.strokeStyle=ink;c.lineWidth=1.5;c.beginPath();c.moveTo(0,TOP);c.lineTo(w,TOP);c.stroke();
+  c.font=`500 11px ${mono()}`;c.textBaseline='middle';c.textAlign='right';
+  c.fillStyle=amber;c.fillText('OIL WINDOW',w-10,y(2)+12);c.fillStyle=violet;c.fillText('GAS',w-10,y(4)+12);
+  c.fillStyle=muted;c.fillText('GRAPHITE',w-10,y(7)+12);c.fillText('KEROGEN FORMS',w-10,y(0)+12);
+  c.textAlign='left';for(let k=0;k<=MAXD;k++)c.fillText(k+' km',8,k===0?TOP+9:y(k));c.fillText('surface',8,TOP/2);
+  const py=y(d);c.strokeStyle=acc;c.lineWidth=2;c.setLineDash([6,4]);c.beginPath();c.moveTo(52,py);c.lineTo(w,py);c.stroke();c.setLineDash([]);
+  c.fillStyle=acc;c.beginPath();c.arc(64,py,7,0,Math.PI*2);c.fill();c.fillStyle=tok('--surface-2');c.beginPath();c.arc(64,py,3,0,Math.PI*2);c.fill();
+  const[zt,zx]=zone(d);
+  $('#depthOut').textContent=`${d.toFixed(1)} km`;
+  $('#rTemp').textContent=d===0?'surface temperature':`about ${Math.round(25*d)}–${Math.round(30*d)}°C`;
+  $('#rPres').textContent=d===0?'1 × air pressure':`about ${Math.round(233*d)}–${Math.round(267*d)} × air pressure`;
+  const my=d*10;$('#rTime').textContent=d===0?'—':`about ${my<1?Math.round(my*1000)+' thousand':(my>=10?Math.round(my):my.toFixed(1))+' million'} years at 0.1 mm a year`;
+  $('#rZone').innerHTML=`<b>${zt}</b><span>${zx}</span>`;
+}
+depthIn.addEventListener('input',drawProbe);
+function fromPointer(e){const r=probe.getBoundingClientRect(),k=(e.clientY-r.top-TOP)/(r.height-TOP-BOT)*MAXD;depthIn.value=clamp(Math.round(k*10)/10,0,MAXD);drawProbe();}
+probe.addEventListener('pointerdown',e=>{probe.setPointerCapture(e.pointerId);fromPointer(e);});
+probe.addEventListener('pointermove',e=>{if(e.buttons)fromPointer(e);});
+
+/* ---------- log-scale bars shared by the loss calculator and the scale chart ---------- */
+function logBars(cv,rows,lo,hi,ticks){
+  const h=30+rows.length*46,[c,w]=prep(cv,h),narrow=w<420,L=narrow?0:Math.min(170,w*0.34),R=w-10,x=v=>L+(R-L)*(Math.log10(clamp(v,10**lo,10**hi))-lo)/(hi-lo);
+  c.font=`500 11px ${mono()}`;c.textBaseline='middle';c.textAlign='center';c.strokeStyle=tok('--border');c.fillStyle=tok('--text-muted');
+  ticks.forEach(([v,lab])=>{const X=x(v);c.beginPath();c.moveTo(X,4);c.lineTo(X,h-22);c.stroke();c.fillText(lab,clamp(X,18,w-18),h-10);});
+  rows.forEach((r,i)=>{
+    const Y=8+i*46,barY=narrow?Y+16:Y+6,X2=x(r.v);
+    c.font=`13px ${sans()}`;c.fillStyle=tok('--text-secondary');
+    if(narrow){c.textAlign='left';c.fillText(r.label,0,Y+6);}else{c.textAlign='right';c.fillText(r.label,L-10,barY+9);}
+    c.fillStyle=r.color;c.fillRect(L,barY,Math.max(2,X2-L),18);
+    c.font=`500 11px ${mono()}`;const tw=c.measureText(r.text).width,inside=X2+6+tw>R;
+    c.textAlign=inside?'right':'left';c.fillStyle=inside?tok('--surface-2'):tok('--text-primary');c.fillText(r.text,inside?X2-6:X2+6,barY+9);
+  });
+}
+
+/* ---------- where the plankton goes ---------- */
+const fIns=['fPres','fOil','fTrap'].map(id=>$('#'+id));
+function drawFunnel(){
+  const p=+fIns[0].value/100,o=+fIns[1].value/100,t=+fIns[2].value/100,share=p*o*t;
+  $('#fPresOut').textContent=`${(p*100).toFixed(1)}%`;$('#fOilOut').textContent=`${Math.round(o*100)}%`;$('#fTrapOut').textContent=`${(t*100).toFixed(1)}%`;
+  $('#fShare').textContent=`${(share*100).toPrecision(2)}%`;$('#fOneIn').textContent=`about 1 in ${(Math.round(1/share/100)*100).toLocaleString()}`;
+  logBars($('#funnel'),[
+    {label:'Plankton carbon made',v:100,text:'100%',color:tok('--text-accent')},
+    {label:'Buried and preserved',v:p*100,text:(p*100).toFixed(1)+'%',color:tok('--text-accent')},
+    {label:'Can become oil',v:p*o*100,text:(p*o*100).toPrecision(2)+'%',color:tok('--violet')},
+    {label:'In a drillable field',v:share*100,text:(share*100).toPrecision(2)+'%',color:tok('--amber')}],
+    -3,2,[[0.001,'0.001%'],[0.01,'0.01%'],[0.1,'0.1%'],[1,'1%'],[10,'10%'],[100,'100%']]);
+}
+fIns.forEach(i=>i.addEventListener('input',drawFunnel));
+
+/* ---------- how long carbon networks take ---------- */
+const MIN=60,HOUR=3600,DAY=86400,YEAR=3.156e7;
+const TIMES=[['Fire: charcoal and soot',1*MIN,30*MIN,1],['Kitchen: toast, coffee, caramel',2*MIN,20*MIN,0],['Hydrothermal liquefaction',10*MIN,60*MIN,0],['Fuel plant',1*HOUR,12*HOUR,0],['Hydrothermal carbonization',2*HOUR,6*HOUR,0],['Lab: rock heated to ~300°C',2*DAY,5*DAY,0],['Soil humus',1*YEAR,300*YEAR,1],['Oil from plankton',2e6*YEAR,5e7*YEAR,1]];
+function drawTimes(){
+  const cv=$('#times'),narrow=(cv.clientWidth||600)<480,rowH=narrow?40:30,h=34+TIMES.length*rowH,[c,w]=prep(cv,h),L=narrow?0:Math.min(220,w*0.4),R=w-10,lo=Math.log10(MIN),hi=Math.log10(1e8*YEAR),x=v=>L+(R-L)*(Math.log10(v)-lo)/(hi-lo);
+  c.font=`500 11px ${mono()}`;c.textBaseline='middle';c.textAlign='center';c.strokeStyle=tok('--border');c.fillStyle=tok('--text-muted');
+  [[MIN,'minute'],[HOUR,'hour'],[DAY,'day'],[YEAR,'year'],[1e3*YEAR,'1,000 yr'],[1e6*YEAR,'1 Myr'],[1e8*YEAR,'100 Myr']].forEach(([v,l])=>{const X=x(v);c.beginPath();c.moveTo(X,2);c.lineTo(X,h-22);c.stroke();if(!narrow||['minute','day','year','1 Myr'].includes(l))c.fillText(l,clamp(X,22,w-26),h-10);});
+  TIMES.forEach(([lab,a,b,nat],i)=>{
+    const Y=6+i*rowH,barY=narrow?Y+17:Y+2;c.font=`13px ${sans()}`;c.fillStyle=tok('--text-secondary');
+    if(narrow){c.textAlign='left';c.fillText(lab,0,Y+6);}else{c.textAlign='right';c.fillText(lab,L-10,barY+8);}
+    c.fillStyle=nat?tok('--text-accent'):tok('--amber');const X1=x(a),X2=x(b);c.beginPath();if(c.roundRect)c.roundRect(X1,barY,Math.max(8,X2-X1),16,8);else c.rect(X1,barY,Math.max(8,X2-X1),16);c.fill();
+  });
+}
+
+/* ---------- capping the broken ends ---------- */
+const PIECES=10;
+function drawCaps(){
+  const cv=$('#caps'),[c,w,h]=prep(cv,200),hyd=+$('#hyd').value/100,capped=Math.round(PIECES*hyd);
+  $('#hydOut').textContent=`${Math.round(hyd*100)}%`;
+  const ink=tok('--text-primary'),acc=tok('--text-accent'),r=Math.max(3,Math.min(7,w/95));
+  c.font=`500 11px ${mono()}`;c.textBaseline='middle';c.textAlign='left';c.fillStyle=tok('--text-muted');
+  c.fillText('BEFORE: ONE LONG CHAIN',0,10);
+  const n=PIECES*3,gap=w/n;
+  c.strokeStyle=tok('--border-stronger');c.lineWidth=2;c.beginPath();c.moveTo(gap/2,34);c.lineTo(w-gap/2,34);c.stroke();
+  for(let i=0;i<n;i++){c.fillStyle=ink;c.beginPath();c.arc(gap*(i+0.5),34,r,0,Math.PI*2);c.fill();}
+  c.fillStyle=tok('--text-muted');c.fillText('AFTER: CAPPED PIECES ARE FUEL MOLECULES',0,70);
+  const lumpW=Math.min(120,w*0.26),cols=5,pw=(w-lumpW-10)/cols;
+  for(let i=0;i<capped;i++){
+    const x0=(i%cols)*pw+r*2.6,y0=100+Math.floor(i/cols)*44;
+    c.strokeStyle=tok('--border-stronger');c.beginPath();c.moveTo(x0,y0);c.lineTo(x0+r*4,y0);c.stroke();
+    for(let k=0;k<3;k++){c.fillStyle=ink;c.beginPath();c.arc(x0+k*r*2,y0,r,0,Math.PI*2);c.fill();}
+    [x0-r*1.55,x0+r*5.55].forEach(hx=>{c.fillStyle=acc;c.beginPath();c.arc(hx,y0,r*0.55,0,Math.PI*2);c.fill();});
+  }
+  const lumpN=(PIECES-capped)*3,cx=w-lumpW/2,cy=128;
+  if(lumpN){
+    for(let i=0;i<lumpN;i++){const a=i*2.399,rr=Math.sqrt(i)*r*1.1;c.fillStyle=i%3?ink:tok('--text-secondary');c.beginPath();c.arc(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,r,0,Math.PI*2);c.fill();}
+    c.fillStyle=tok('--text-muted');c.textAlign='center';c.fillText('COKE',cx,190);
+  }
+  $('#capsCount').textContent=`${capped} of ${PIECES} pieces capped with hydrogen into fuel molecules · ${PIECES-capped} fused into coke`;
+}
+$('#hyd').addEventListener('input',drawCaps);
+
+/* ---------- scale ---------- */
+const PLANT=3500,WORLD=100e6*365*0.136;
+function drawScale(){
+  const s=+$('#share').value/100,need=s*WORLD/PLANT;
+  $('#shareOut').textContent=`${Math.round(s*100)}%`;$('#plants').textContent=fmt(need);
+  logBars($('#scale'),[
+    {label:'One Frankfurt-size plant',v:PLANT,text:'3,500 t',color:tok('--amber')},
+    {label:`${Math.round(s*100)}% of world oil`,v:s*WORLD,text:fmt(s*WORLD)+' t',color:tok('--violet')},
+    {label:'World oil use',v:WORLD,text:'about 5 billion t',color:tok('--text-accent')}],
+    3,10,[[1e3,'1k t'],[1e5,'100k t'],[1e7,'10M t'],[1e9,'1B t'],[1e10,'10B t']]);
+}
+$('#share').addEventListener('input',drawScale);
+
+/* ---------- Fischer–Tropsch chain lengths ---------- */
+const BANDS=[['Gas','C1–C4',1,4,'--text-muted'],['Naphtha, gasoline','C5–C11',5,11,'--violet'],['Jet and diesel','C12–C20',12,20,'--text-accent'],['Wax','C21+',21,Infinity,'--amber']];
+function drawFT(){
+  const a=+$('#alpha').value,W=n=>n*(1-a)**2*a**(n-1),N=40,[c,w,h]=prep($('#ft'),200);
+  $('#alphaOut').textContent=a.toFixed(2);
+  const vals=Array.from({length:N},(_,i)=>W(i+1)),max=Math.max(...vals),L=34,B=h-24,bw=(w-L-4)/N;
+  c.font=`500 11px ${mono()}`;c.fillStyle=tok('--text-muted');c.textAlign='right';c.textBaseline='middle';
+  c.fillText((max*100).toFixed(1)+'%',L-4,10);c.fillText('0',L-4,B);
+  vals.forEach((v,i)=>{const n=i+1,band=BANDS.find(b=>n>=b[2]&&n<=b[3]);c.fillStyle=tok(band[4]);const bh=(B-10)*v/max;c.fillRect(L+i*bw+1,B-bh,Math.max(1,bw-2),bh);});
+  c.textAlign='center';[1,5,12,20,30,40].forEach(n=>c.fillText('C'+n,L+(n-0.5)*bw,h-9));
+  const share=b=>{if(b[3]===Infinity){let s=1;for(let n=1;n<b[2];n++)s-=W(n);return s;}let s=0;for(let n=b[2];n<=b[3];n++)s+=W(n);return s;};
+  $('#ftTiles').innerHTML=BANDS.map(b=>`<div style="border-top-color:var(${b[4]})"><b>${Math.round(share(b)*100)}%</b>${b[0]} <span class="tag">${b[1]}</span></div>`).join('');
+}
+$('#alpha').addEventListener('input',drawFT);
+
+/* ---------- the lab loop ---------- */
+const LOOP=[
+  ['Read and organize everything','<p>Mine decades of papers, patents and lab data into clean training datasets. This is where frontier models are already genuinely useful.</p>'],
+  ['Generate training data with physics','<p>Write and run quantum chemistry simulations (DFT) of how CO₂, hydrogen and carbon chains behave on thousands of candidate catalyst surfaces. This is the expensive, ground-truth part.</p>'],
+  ['Train specialist models','<ul><li><b>Interatomic potential models</b> simulate bond-breaking and bond-forming thousands of times faster than quantum chemistry.</li><li><b>Generative materials models</b> propose new catalyst structures, alloys and pore shapes.</li><li><b>Property predictors</b> estimate activity, selectivity and lifespan for each candidate.</li><li><b>Process models and control AIs</b> optimize temperatures, pressures and flows in a running plant.</li></ul>'],
+  ['Close the loop with real labs','<p>The frontier model picks the most promising candidates, robots synthesize and test them, the results retrain the specialist models, and the cycle repeats: the “self-driving lab.”</p>']];
+const loop=$('#loop');let loopI=0;
+function renderLoop(){
+  loop.querySelectorAll('button').forEach(b=>+b.dataset.i===loopI?b.setAttribute('aria-current','step'):b.removeAttribute('aria-current'));
+  $('#loopTitle').textContent=`${loopI+1}. ${LOOP[loopI][0]}`;$('#loopText').innerHTML=LOOP[loopI][1];
+}
+loop.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;loopI=+b.dataset.i;renderLoop();});
+renderLoop();
+
+/* ---------- carbon-13 pairs ---------- */
+const iso=$('#iso'),COLS=12,ROWS=7,P13=0.3,NM=COLS*ROWS,HEAVY=Math.round(2*NM*P13*0.9),CHANCE=Math.round(HEAVY*HEAVY/(4*NM));
+let isoMode='random';
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+// Both views hold the same carbon-13 atoms: "at random" puts as many in shared molecules as chance
+// predicts, "abiotic" about a third as many.
+function makeMols(doubles,seed){
+  const r=rng(seed),m=Array.from({length:NM},()=>[false,false]),order=[...Array(NM).keys()].sort(()=>r()-0.5);let left=HEAVY,i=0;
+  for(;i<doubles;i++){m[order[i]]=[true,true];left-=2;}
+  for(;left>0&&i<NM;i++,left--)m[order[i]]=r()<0.5?[true,false]:[false,true];return m;
+}
+const RANDOM=makeMols(CHANCE,7),ABIOTIC=makeMols(Math.round(CHANCE/3),11);
+function drawIso(){
+  const w=iso.clientWidth||600,h=Math.round(w*7/12),[c]=prep(iso,h),mols=isoMode==='random'?RANDOM:ABIOTIC,cw=w/COLS,ch=h/ROWS,r=Math.min(cw,ch)*0.17;
+  let heavy=0,pairs=0;
+  mols.forEach((m,i)=>{
+    const cx=(i%COLS+0.5)*cw,cy=(Math.floor(i/COLS)+0.5)*ch,ax=cx-r*1.3,bx=cx+r*1.3;heavy+=m[0]+m[1];
+    if(m[0]&&m[1]){pairs++;c.strokeStyle=tok('--text-accent');c.lineWidth=2;c.beginPath();c.ellipse(cx,cy,r*2.9,r*1.75,0,0,Math.PI*2);c.stroke();}
+    c.strokeStyle=tok('--border-stronger');c.lineWidth=1.5;c.beginPath();c.moveTo(ax,cy);c.lineTo(bx,cy);c.stroke();
+    [[ax,m[0]],[bx,m[1]]].forEach(([x,h13])=>{c.beginPath();c.arc(x,cy,r,0,Math.PI*2);if(h13){c.fillStyle=tok('--amber');c.fill();}else{c.fillStyle=tok('--surface-2');c.fill();c.strokeStyle=tok('--text-muted');c.lineWidth=1.5;c.stroke();}});
+  });
+  $('#isoCount').textContent=`${NM} ethane molecules · ${heavy} carbon-13 atoms · ${pairs} molecules with two (chance alone gives about ${CHANCE})`;
+}
+$('#isoSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;isoMode=b.dataset.mode;$('#isoSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));drawIso();});
+
+const redraw=()=>{drawProbe();drawFunnel();drawTimes();drawCaps();drawScale();drawFT();drawIso();};
+addEventListener('resize',redraw);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redraw);
+new MutationObserver(redraw).observe(root,{attributes:true,attributeFilter:['data-theme']});
+if(document.fonts)document.fonts.ready.then(redraw);
+redraw();
+})();
+</script>
+<script src="../assets/backdrop.js"></script>
+<script>Backdrop.page('strata');</script>
+<div id="page-ready" hidden></div>
+</body>
+</html>
